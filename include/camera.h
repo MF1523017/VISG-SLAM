@@ -3,6 +3,33 @@
 #include <sl/Camera.hpp>
 #include <opencv2/opencv.hpp>
 namespace VISG {
+	struct Extrinsic {
+		cv::Mat R;
+		cv::Point3f t;
+		Extrinsic() {
+			R.create(cv::Size(3, 3), CV_32FC1);
+		}
+		~Extrinsic() {
+			R.release();
+		}
+	};
+	struct Intrinsic {
+		float fx,fy,cx,cy;
+		double disto[5];
+		float v_fov, h_fov, d_fov;
+		cv::Size image_size;
+		Intrinsic() = default;
+		Intrinsic(const sl::CameraParameters &rhs);
+		Intrinsic & operator=(const sl::CameraParameters &rhs);
+	};
+	struct CameraInfo {
+		Extrinsic extrinsic;
+		Intrinsic left_cam, right_cam;
+		CameraInfo() = default;
+		CameraInfo(const sl::CalibrationParameters &rhs);
+		CameraInfo & operator = (const sl::CalibrationParameters &rhs);
+		friend std::ostream & operator <<(std::ostream &os, const CameraInfo &rhs);
+	};
 	class Camera {
 	public:
 		/*
@@ -46,14 +73,23 @@ namespace VISG {
 			//return zed_.getCameraFPS();
 			return zed_.getCurrentFPS();
 		}
+		/*
+		* @brief: get the camera information: Intrinsic parameters of each cameras and extrinsic (translation and rotation).
+		*/
+		void GetCamInfo(CameraInfo &cam_info) {
+			cam_info = zed_.getCameraInformation().calibration_parameters;
+		}
+		void GetCamInfoRaw(CameraInfo &cam_info_raw) {
+			cam_info_raw = zed_.getCameraInformation().calibration_parameters_raw;
+		}
+		CameraInfo cam_info, cam_info_raw;
 	private:
 		sl::Camera zed_;// zed instance
 		sl::Mat left_; // left image
 		sl::Mat right_;// right image
+
 	};
-
-
-
+	std::ostream & operator <<(std::ostream &os, const CameraInfo &rhs);
 }
 
 

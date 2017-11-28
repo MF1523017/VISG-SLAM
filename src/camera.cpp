@@ -2,6 +2,49 @@
 #include "utils.hpp"
 namespace VISG{
 
+Intrinsic::Intrinsic(const sl::CameraParameters &rhs){
+	*this = rhs;
+}
+
+Intrinsic & Intrinsic::operator=(const sl::CameraParameters &rhs) {
+	fx = rhs.fx;
+	fy = rhs.fy;
+	cx = rhs.cx;
+	cy = rhs.cy;
+	for (int i = 0; i < 5; ++i) {
+		disto[i] = rhs.disto[i];
+	}
+	v_fov = rhs.v_fov;
+	h_fov = rhs.h_fov;
+	d_fov = rhs.d_fov;
+	image_size.height = rhs.image_size.height;
+	image_size.width = rhs.image_size.width;
+	return *this;
+}
+
+CameraInfo::CameraInfo(const sl::CalibrationParameters &rhs) {
+	*this = rhs;
+}
+CameraInfo & CameraInfo::operator = (const sl::CalibrationParameters &rhs) {
+	cv::Mat R_vec(3, 1, CV_32FC1, (void*)rhs.R.ptr());
+	cv::Rodrigues(R_vec, extrinsic.R);
+	extrinsic.t.x = rhs.T.x;
+	extrinsic.t.y = rhs.T.y;
+	extrinsic.t.z = rhs.T.z;
+	left_cam = rhs.left_cam;
+	right_cam = rhs.right_cam;
+	return *this;
+}
+std::ostream & operator <<(std::ostream &os, const CameraInfo &rhs) {
+	os << "Extrinsic: " << std::endl << " R: " << rhs.extrinsic.R << std::endl <<
+		"t: " << rhs.extrinsic.t << std::endl <<
+		"Intrinsic: " << std::endl << "left cam: " << std::endl <<
+		"fx: " << rhs.left_cam.fx << " fy: " << rhs.left_cam.fy << " cx: " << rhs.left_cam.cx << " cy: " << rhs.left_cam.cy <<
+		std::endl << "right cam: " << std::endl <<
+		"fx: " << rhs.right_cam.fx << " fy: " << rhs.right_cam.fy << " cx: " << rhs.right_cam.cx << " cy: " << rhs.right_cam.cy;
+	return os;
+}
+
 bool Camera::Open(int resolution , int fps ) {
 	sl::InitParameters init_parameters;
 	init_parameters.camera_resolution = sl::RESOLUTION(resolution);
@@ -11,6 +54,8 @@ bool Camera::Open(int resolution , int fps ) {
 		std::cout << sl::errorCode2str(err) << std::endl;
 		return false;
 	}
+	cam_info = zed_.getCameraInformation().calibration_parameters;
+	cam_info_raw = zed_.getCameraInformation().calibration_parameters_raw;
 	return true;
 }
 
