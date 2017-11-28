@@ -3,4 +3,6 @@
 
 void test_Camera();
 
+void test_VisgSlam();
+
 #endif // ! TEST_H
