@@ -33,7 +33,7 @@ void test_Camera(){
 			//imshow("image", left, right);
 			cv::cvtColor(left, left, CV_RGBA2GRAY);
 			cv::cvtColor(right, right, CV_RGBA2GRAY);
-			current.ExtractFeature(left, right);
+			current.ExtractFeatures(left, right);
 			std::cout << "fps: " << zed.GetFPS() << std::endl;
 		/*	int key = cv::waitKey(5);
 			if (key == 27)
@@ -45,6 +45,8 @@ void test_Camera(){
 	zed.Close();
 	system("pause");
 }
+
+
 
 void test_VisgSlam() {
 	VisgSlam visg;

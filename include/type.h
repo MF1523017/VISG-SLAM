@@ -1,7 +1,9 @@
 #ifndef TYPE_H
 #define TYPE_H
-#include <opencv2/opencv.hpp>
-#include <string>
-using KeyPoints = std::vector<cv::KeyPoint>;
+#include "common.h"
+namespace VISG {
+	using KeyPoints = std::vector<cv::KeyPoint>;
+	using MatchPoints = std::vector<cv::Point3f>;
+}
 
 #endif

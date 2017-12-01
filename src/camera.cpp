@@ -28,9 +28,9 @@ CameraInfo::CameraInfo(const sl::CalibrationParameters &rhs) {
 CameraInfo & CameraInfo::operator = (const sl::CalibrationParameters &rhs) {
 	cv::Mat R_vec(3, 1, CV_32FC1, (void*)rhs.R.ptr());
 	cv::Rodrigues(R_vec, extrinsic.R);
-	extrinsic.t.x = rhs.T.x;
-	extrinsic.t.y = rhs.T.y;
-	extrinsic.t.z = rhs.T.z;
+	extrinsic.t.at<float>(0,0) = rhs.T.x;
+	extrinsic.t.at<float>(1,0) = rhs.T.y;
+	extrinsic.t.at<float>(2,1) = rhs.T.z;
 	left_cam = rhs.left_cam;
 	right_cam = rhs.right_cam;
 	return *this;

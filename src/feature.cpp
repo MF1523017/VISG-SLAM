@@ -2,24 +2,20 @@
 
 namespace VISG {
 Feature::~Feature() {
-	key_points_.clear();
-	descriptors_.release();
 }
 OrbFeature::OrbFeature() {
-	detector_ = cv::ORB::create(1000,1.2,10,50);
+	detector_ = cv::ORB::create(500,2,2);
 }
 
-void OrbFeature::Extract(const cv::Mat &img) {
+void OrbFeature::Extract(const cv::Mat &img, KeyPoints &keys, cv::Mat & descriptors) {
 	if (img.empty())
 		assert(false);
-	key_points_.clear();//clear old key_points
-	descriptors_.release();// clear old descriptors
-	detector_->detect(img, key_points_);
-	detector_->compute(img, key_points_, descriptors_);
+	keys.clear();//clear old key_points
+	descriptors.release();// clear old descriptors
+	detector_->detect(img, keys);
+	detector_->compute(img, keys, descriptors);
 }
 
 OrbFeature::~OrbFeature(){
-	key_points_.clear();
-	descriptors_.release();
 }
 }

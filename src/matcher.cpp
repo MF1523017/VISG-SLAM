@@ -5,6 +5,7 @@ namespace VISG {
 	// http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
 	int Matcher::DescriptorDistance(const cv::Mat &a, const cv::Mat &b)
 	{
+		
 		const int *pa = a.ptr<int32_t>();
 		const int *pb = b.ptr<int32_t>();
 		//std::cout << "[Matcher DescriptorDistance] *pa: " << *pa << std::endl;

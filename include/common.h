@@ -13,6 +13,7 @@ namespace VISG {
 		static cv::Mat lRr;
 		static cv::Mat ltr;
 		static size_t HistBin;
+		static int BestOrbDistance;
 	};
 
 }

@@ -5,12 +5,14 @@
 namespace VISG {
 	struct Extrinsic {
 		cv::Mat R;
-		cv::Point3f t;
+		cv::Mat t;
 		Extrinsic() {
 			R.create(cv::Size(3, 3), CV_32FC1);
+			t.create(cv::Size(3, 1), CV_32FC1);
 		}
 		~Extrinsic() {
 			R.release();
+			t.release();
 		}
 	};
 	struct Intrinsic {
@@ -76,12 +78,7 @@ namespace VISG {
 		/*
 		* @brief: get the camera information: Intrinsic parameters of each cameras and extrinsic (translation and rotation).
 		*/
-		void GetCamInfo(CameraInfo &cam_info) {
-			cam_info = zed_.getCameraInformation().calibration_parameters;
-		}
-		void GetCamInfoRaw(CameraInfo &cam_info_raw) {
-			cam_info_raw = zed_.getCameraInformation().calibration_parameters_raw;
-		}
+
 		CameraInfo cam_info, cam_info_raw;
 	private:
 		sl::Camera zed_;// zed instance

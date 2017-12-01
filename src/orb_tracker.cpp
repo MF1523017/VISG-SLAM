@@ -5,12 +5,14 @@ namespace VISG {
 		;
 	}
 	void OrbTracker::operator()(cv::Mat &left, cv::Mat &right) {
+		p_frame_cur_ = std::make_shared<Frame>();
 		p_frame_cur_->ExtractFeatures(left, right);
 	//	DrawBoard::handle().DrawFeatures(right, p_frame_cur_->right_key_points, false);
-		// TODO 
+		// TODO ,
 		switch (state_)
 		{
 		case VISG::TrackerInterface::INIT:
+
 			Init(left,right);
 			state_ = TRACKING;
 			break;
@@ -23,20 +25,21 @@ namespace VISG {
 		default:
 			break;
 		}
+		std::cout << "current frame key_points 0: " << p_frame_cur_->left_key_points[0].pt <<
+			" last frame key_points 0: " << p_frame_last_->left_key_points[0].pt << std::endl;
+		p_frame_last_ = p_frame_cur_;
 	}
 	bool OrbTracker::Init(cv::Mat &left, cv::Mat &right) {
 		// TODO not defined
 		p_frame_last_ = p_frame_ref_ = p_frame_cur_;
-		KeyPoints & lkeys = p_frame_cur_->left_key_points;
-		cv::Mat & ld = p_frame_cur_->left_descriptors;
-		KeyPoints & rkeys = p_frame_cur_->right_key_points;
-		cv::Mat & rd = p_frame_cur_->right_descriptors;
-		p_frame_cur_->Match(lkeys, ld, rkeys, rd);
-		DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points);
+		p_frame_cur_->StereoMatch();
+		DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points,false);
 		return true;
 	}
 	bool OrbTracker::Track(cv::Mat &left, cv::Mat &right){
 		// TODO not defined
+		p_frame_cur_->StereoMatch();
+		DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points, false);
 		return true;
 	}
 	std::vector<cv::Point3f> OrbTracker::GetMapPoints()const {
