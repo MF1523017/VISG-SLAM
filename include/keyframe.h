@@ -9,16 +9,15 @@ namespace VISG {
 		KeyFrame(Frame::Ptr p_frame, cv::Mat &left, cv::Mat &right) {
 			left_.copyTo(left_);
 			right_.copyTo(right_);
-			p_frame->wRc.copyTo(wRc);
-			p_frame->wTc.copyTo(wTc);
+			wRc = p_frame->wRc;
+			wTc = p_frame->wTc;
 		}
-	
 		void Match();
 	public:
 		using Ptr = std::shared_ptr<KeyFrame>;
 		static size_t keys_th_tracked, keys_th_created;//key points' threshold 
-		cv::Mat wRc;//camera to world;
-		cv::Mat wTc;
+		Eigen::Matrix3f wRc;//camera to world;
+		Eigen::Vector3f wTc;
 	private:
 		cv::Mat left_;
 		cv::Mat right_;

@@ -11,7 +11,8 @@
 #include <string>
 #include <sl/Camera.hpp>
 #include <opencv2/opencv.hpp>
-
+#include "type.h"
+#include "common.h"
 
 #ifndef M_PI
 #define M_PI 3.1416f
@@ -25,8 +26,11 @@ namespace VISG {
 	void imshow(const std::string &name, const cv::Mat &left,const cv::Mat &right);
 	// convert depth to image to save
 	void depth2Image(const cv::Mat& depth, cv::Mat &depth_image);
-	/*
-	*/
+	
+	Eigen::Matrix3f Rcv2Eigen(const cv::Mat &R);
+	Eigen::Vector3f Tcv2Eigen(const cv::Mat &t);
+	Eigen::Vector3f Pcv2Eigen(const cv::Point3f &p);
+	Eigen::Vector3f R2ypr(const Eigen::Matrix3f &R);
 
 }
 

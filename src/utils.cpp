@@ -58,5 +58,40 @@ namespace VISG {
 			}
 		}
 	}
-	
+
+	Eigen::Matrix3f Rcv2Eigen(const cv::Mat &R_rhs) {
+		cv::Mat R;
+		R_rhs.convertTo(R, CV_32F);
+		Eigen::Matrix3f REigen;
+		REigen << R.at<float>(0, 0), R.at<float>(0, 1), R.at<float>(0, 2),
+			R.at<float>(1, 0), R.at<float>(1, 1), R.at<float>(1, 2),
+			R.at<float>(2, 0), R.at<float>(2, 1), R.at<float>(2, 2);
+		return REigen;
+	}
+
+	Eigen::Vector3f Tcv2Eigen(const cv::Mat &t_rhs) {
+		cv::Mat t;
+		t_rhs.convertTo(t, CV_32F);
+		return Eigen::Vector3f(t.at<float>(0, 0), t.at<float>(1, 0), t.at<float>(2, 0));
+	}
+
+	Eigen::Vector3f Pcv2Eigen(const cv::Point3f &p) {
+		return Eigen::Vector3f(p.x, p.y, p.z);
+	}
+
+	Eigen::Vector3f R2ypr(const Eigen::Matrix3f &R) {
+		Eigen::Vector3f n = R.col(0);
+		Eigen::Vector3f o = R.col(1);
+		Eigen::Vector3f a = R.col(2);
+
+		Eigen::Vector3f ypr(3);
+		float y = atan2(n(1), n(0));
+		float p = atan2(-n(2), n(0) * cos(y) + n(1) * sin(y));
+		float r = atan2(a(0) * sin(y) - a(1) * cos(y), -o(0) * sin(y) + o(1) * cos(y));
+		ypr(0) = y;
+		ypr(1) = p;
+		ypr(2) = r;
+
+		return ypr / M_PI * 180.0;
+	}
 }

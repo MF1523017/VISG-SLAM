@@ -1,9 +1,14 @@
 #include "frame.h"
 #include "keyframe.h"
 #include "matcher.h"
+#include "utils.hpp"
 #include <thread>
 
 namespace VISG {
+void Frame::SetPose(const Eigen::Matrix3f &R, const Eigen::Vector3f &t) {
+	wRc = R;
+	wTc = t;
+}
 void Frame::ExtractFeatures(const cv::Mat&left, const cv::Mat&right) {
 	std::thread thread_left(&Frame::ExtractORB, this, left, true);
 	std::thread thread_right(&Frame::ExtractORB, this, right, false);
@@ -55,7 +60,7 @@ void Frame::Match(KeyPoints &left_key_points, const cv::Mat &left_descriptors, K
 			}
 			if (best_r_idx != -1) {
 				std::cout << "[Frame Match] best_dist: " << best_dist << std::endl;
-				match_points.push_back(cv::Point3f(lp.x, lp.y, right_key_points[best_r_idx].pt.x));
+				match_points.push_back(Eigen::Vector3f(lp.x, lp.y, right_key_points[best_r_idx].pt.x));
 				right_key_points[best_r_idx].pt.x = -1;
 				std::cout << "[Frame Match] match_points: " << match_points.back() << std::endl;
 			}
@@ -69,8 +74,6 @@ bool Frame::IsKeyFrame(KeyPoints &key_points) {
 }
 void Frame::Hist(KeyPoints &key_points, std::vector<std::vector<size_t>> &hist) {
 	size_t step = Common::Height / Common::HistBin + 1;
-	
-	std::cout << "[Frame Hist] step: " << step << std::endl;
 	hist.resize(Common::HistBin);
 	size_t point_size = key_points.size();
 	for (size_t i = 0; i < point_size; ++i) {
@@ -82,18 +85,22 @@ void Frame::Hist(KeyPoints &key_points, std::vector<std::vector<size_t>> &hist) 
 }
 
 void Frame::StereoMatch() {
-	match_points.clear();//clear old match_points;
+	Reset();
+	// histed right image key points by y
 	int pixel_diff = Common::Weight / 10;
 	std::vector<std::vector<size_t>> r_hist(Common::HistBin,std::vector<size_t>());
+	for (size_t i = 0; i < Common::HistBin; ++i) {
+		r_hist[i].reserve(200);
+	}
 	size_t step = Common::Height / Common::HistBin + 1;
-	size_t point_size = right_key_points.size();
+	const size_t point_size = right_key_points.size();
 	for (size_t i = 0; i < point_size; ++i) {
 		size_t idx = floor(right_key_points[i].pt.y / step);
 		r_hist[idx].push_back(i);
 	}
 
-	size_t keys_size = left_key_points.size();
-	
+	// get the match points 
+	const size_t keys_size = left_key_points.size();
 	for (size_t i = 0; i < keys_size; ++i) {
 		const cv::Point2f &lp = left_key_points[i].pt;
 		size_t idx = floor(lp.y / step);
@@ -116,13 +123,81 @@ void Frame::StereoMatch() {
 			}
 		}
 		if (best_dist < Common::BestOrbDistance) {
-	//		std::cout << "[Frame Match] best_dist: " << best_dist << std::endl;
-			match_points.push_back(cv::Point3f(lp.x, lp.y, right_key_points[best_r_idx].pt.x));
-	//		std::cout << "[Frame Match] match_points: " << match_points.back() << std::endl;
+			const float  rx = right_key_points[best_r_idx].pt.x;
+			match_points[i] = Eigen::Vector3f(lp.x, lp.y, rx);
+			float z = Common::ltr.at<float>(0, 0) * Common::Fx / (lp.x - rx);
+			const float x = (lp.x - Common::Cx)*z*Common::FxInv;
+			const float y = (lp.y - Common::Cy)*z*Common::FyInv;
+			Eigen::Vector3f x3Dc(x, y, z);
+			map_points[i] = Eigen::Vector3f(wRc * x3Dc + wTc);
+			inliers[i] = true;
 		}
 	}
 }
 
+bool Frame::RefTrack(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
+	MyMatches matches,matches1;
+	inliers_matches.clear();
+	// get the init matches
+	Matcher::OrbMatch(matches, p_frame_ref->left_descriptors, left_descriptors);
+	
+	std::vector<cv::KeyPoint> & ref_key_points = p_frame_ref->left_key_points;
+	const std::vector<bool> &ref_inliers = p_frame_ref->inliers;
+	std::vector<cv::Point2f> points1;
+	std::vector<cv::Point2f> points2;
+	// apply for memory
+	matches1.reserve(matches.size());
+	points1.reserve(matches.size());
+	points2.reserve(matches.size());
+	for (size_t i = 0; i < matches.size(); ++i) {
+		const int & queryIdx = matches[i].first;
+		if (!ref_inliers[queryIdx])
+			continue;
+		const int & trainIdx = matches[i].second;
+		points1.push_back(ref_key_points[queryIdx].pt);
+		points2.push_back(left_key_points[trainIdx].pt);
+		matches1.push_back(matches[i]);
+	}
+	
+	bool ret = RecoverPose(points1, points2, matches1,inliers_matches);
+	if (!ret) {
+		std::swap(inliers_matches, matches1);
+		return false;
+	}
+	return true;
+}
+
+bool Frame::RecoverPose(const std::vector<cv::Point2f> &points1, const std::vector<cv::Point2f> &points2, const MyMatches &matches, MyMatches &inliers_matches) {
+	cv::Mat camera_matrix,mask;
+	Common::K.convertTo(camera_matrix, CV_64F);
+	cv::Mat E = cv::findEssentialMat(points1, points2, Common::K, cv::RANSAC, 0.999, 1.0, mask);
+	if (E.empty())
+		return false;
+	int valid_count = cv::countNonZero(mask);
+	if (valid_count < 10 || static_cast<double>(valid_count) / points1.size() < 0.6)
+		return false;
+	inliers_matches.reserve(matches.size());
+	for (size_t i = 0; i < mask.rows; ++i) {
+		int status = mask.at<char>(i, 0);
+		if (status) {
+			inliers_matches.push_back(matches[i]);
+		}
+	}
+	cv::Mat R, t;
+	cv::recoverPose(E, points1, points2, Common::K, R, t, mask);// will change the status of the mask
+	wRc = Rcv2Eigen(R);
+	wTc = Tcv2Eigen(t);
+	return true;
+}
+
+void Frame::Reset() {
+	match_points.clear();//clear old match_points;
+	map_points.clear();
+	inliers.clear();
+	inliers.resize(Common::FeaturesNum, false);
+	match_points.resize(Common::FeaturesNum);
+	map_points.resize(Common::FeaturesNum);
+}
 
 
 }

@@ -9,9 +9,14 @@ namespace VISG {
 		Common::Fy = zed_.cam_info.left_cam.fy;
 		Common::Cx = zed_.cam_info.left_cam.cx;
 		Common::Cy = zed_.cam_info.left_cam.cy;
+		Common::K = (cv::Mat_<float>(3, 3) << Common::Fx, 0, Common::Cx,
+			0, Common::Fy, Common::Cy,
+			0, 0, 1);
+
 		Common::lRr = zed_.cam_info.extrinsic.R;
 		Common::ltr = zed_.cam_info.extrinsic.t;
-
+		Common::FxInv = 1.0 / Common::Fx;
+		Common::FyInv = 1.0 / Common::Fy;
 	}
 	void VisgSlam::Run(cv::Mat left, cv::Mat right) {
 		while (true) {

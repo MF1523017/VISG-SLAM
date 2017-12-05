@@ -49,6 +49,7 @@ bool Camera::Open(int resolution , int fps ) {
 	sl::InitParameters init_parameters;
 	init_parameters.camera_resolution = sl::RESOLUTION(resolution);
 	init_parameters.camera_fps = fps;
+	init_parameters.coordinate_units = sl::UNIT_METER;
 	sl::ERROR_CODE err = zed_.open(init_parameters);
 	if (err != sl::SUCCESS) {
 		std::cout << sl::errorCode2str(err) << std::endl;

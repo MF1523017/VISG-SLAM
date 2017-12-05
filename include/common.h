@@ -5,15 +5,20 @@ lMr: the right image corr to left image corr
 */
 #include <opencv2/opencv.hpp>
 #include <memory>
+#include <utility>
+#include <algorithm>
 namespace VISG {
 	struct Common {
 		static size_t Height;
 		static size_t Weight;
 		static float Fx, Fy, Cx, Cy;
+		static float FxInv, FyInv;
+		static cv::Mat K;
 		static cv::Mat lRr;
 		static cv::Mat ltr;
 		static size_t HistBin;
 		static int BestOrbDistance;
+		static size_t FeaturesNum;
 	};
 
 }

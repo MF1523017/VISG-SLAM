@@ -18,6 +18,7 @@ private:
 	Frame::Ptr p_frame_cur_;
 	Frame::Ptr p_frame_last_;
 	Frame::Ptr p_frame_ref_;
+	cv::Mat ref_image;
 	std::vector<KeyFrame::Ptr> key_frames;
 };
 }

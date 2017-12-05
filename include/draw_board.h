@@ -13,6 +13,7 @@ public:
 	}
 	void DrawFeatures(cv::Mat &img, const KeyPoints &key_points,bool showing = true);
 	void DrawMatch(cv::Mat &left, cv::Mat &right, MatchPoints &match_points, bool showing = true);
+	void DrawMatch(cv::Mat &left, cv::Mat &right, MyMatches &my_matches, const KeyPoints& key_points1, const KeyPoints& key_points2, bool showing = true);
 };
 }
 #endif

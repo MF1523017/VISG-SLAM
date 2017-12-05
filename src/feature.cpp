@@ -4,7 +4,7 @@ namespace VISG {
 Feature::~Feature() {
 }
 OrbFeature::OrbFeature() {
-	detector_ = cv::ORB::create(500,2,2);
+	detector_ = cv::ORB::create(Common::FeaturesNum,1.2,2);
 }
 
 void OrbFeature::Extract(const cv::Mat &img, KeyPoints &keys, cv::Mat & descriptors) {
