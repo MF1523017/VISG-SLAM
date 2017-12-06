@@ -69,8 +69,8 @@ void Frame::Match(KeyPoints &left_key_points, const cv::Mat &left_descriptors, K
 	}
 }
 
-bool Frame::IsKeyFrame(KeyPoints &key_points) {
-	return (key_points.size() < KeyFrame::keys_th_tracked) && (key_points.size() > KeyFrame::keys_th_created);
+bool Frame::IsKeyFrame(MyMatches &matches) {
+	return (matches.size() < KeyFrame::keys_th_tracked);
 }
 void Frame::Hist(KeyPoints &key_points, std::vector<std::vector<size_t>> &hist) {
 	size_t step = Common::Height / Common::HistBin + 1;
@@ -158,7 +158,8 @@ bool Frame::RefTrack(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 		points2.push_back(left_key_points[trainIdx].pt);
 		matches1.push_back(matches[i]);
 	}
-	
+	if (points1.empty())
+		return false;
 	bool ret = RecoverPose(points1, points2, matches1,inliers_matches);
 	if (!ret) {
 		std::swap(inliers_matches, matches1);

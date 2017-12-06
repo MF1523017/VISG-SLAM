@@ -14,8 +14,8 @@ namespace VISG {
 		{
 		case VISG::TrackerInterface::INIT:
 
-			Init(left,right);
-			state_ = TRACKING;
+			if(Init(left,right))
+				state_ = TRACKING;
 			break;
 		case VISG::TrackerInterface::TRACKING:
 			Track(left, right);
@@ -31,28 +31,31 @@ namespace VISG {
 		p_frame_last_ = p_frame_cur_;
 	}
 	bool OrbTracker::Init(cv::Mat &left, cv::Mat &right) {
-		p_frame_last_ = p_frame_ref_ = p_frame_cur_;
-		ref_image = left.clone();
 		p_frame_cur_->StereoMatch();
-		DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points,false);
-		return true;
+		if (p_frame_cur_->match_points.size() > 100) {
+			p_frame_last_ = p_frame_ref_ = p_frame_cur_;
+			ref_image = left.clone();
+			std::cout << "init sucessful! " << std::endl;
+			DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points, false);
+			return true;
+		}
+		return false;
 	}
 	bool OrbTracker::Track(cv::Mat &left, cv::Mat &right){
 		// TODO not defined
+	//	std::cout << "[OrbTracker Track] p_frame_ref_ status: before " << p_frame_ref_.use_count() << std::endl;
 		MyMatches my_matches;
 		auto ret = p_frame_cur_->RefTrack(p_frame_ref_, my_matches);
-		Eigen::Vector3f ypr(R2ypr(p_frame_cur_->wRc));
-		Eigen::Vector3f t(p_frame_cur_->wTc);
-		char text_rotation[128];
-		char text_translation[128];
-		snprintf(text_rotation, 128, "rotation: %3.2f, %3.2f, %3.2f", ypr.x(), ypr.y(), ypr.z());
-		snprintf(text_translation, 128, "translation: %3.2f, %3.2f, %3.2f", t.x(), t.y(), t.z());
-		cv::putText(left, text_rotation, cv::Point2i(100, 20), 0, 0.5, cv::Scalar(255, 0, 0));
-		cv::putText(left, text_translation, cv::Point2i(100, 50), 0, 0.5, cv::Scalar(255, 0, 0));
+		std::cout << "[OrbTracker Track] track ret: " << ret << " mathches size: " << my_matches.size() << std::endl;
+		DrawBoard::handle().DrawPose(left, p_frame_cur_->wRc, p_frame_cur_->wTc, ret);
 		DrawBoard::handle().DrawMatch(ref_image, left, my_matches, p_frame_ref_->left_key_points, p_frame_cur_->left_key_points, false);
-		std::cout << "[OrbTracker Track] track ret: " << ret << std::endl;
-		//std::cout << "[OrbTracker Track] t: " << (p_frame_cur_->wTc).transpose() << std::endl;
-		//DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points, false);
+		
+		if (p_frame_cur_->IsKeyFrame(my_matches)) {
+			p_frame_cur_->StereoMatch();
+			p_frame_ref_.swap(p_frame_cur_);// = p_frame_cur_;
+			ref_image = left.clone();
+		}
+	//	std::cout << "[OrbTracker Track] p_frame_ref_ status: after " << p_frame_ref_.use_count() << std::endl;
 		return true;
 	}
 	std::vector<cv::Point3f> OrbTracker::GetMapPoints()const {

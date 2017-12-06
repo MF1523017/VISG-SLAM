@@ -1,4 +1,5 @@
 #include "draw_board.h"
+#include "utils.hpp"
 
 namespace VISG {
 void DrawBoard::DrawFeatures(cv::Mat &img, const KeyPoints &key_points, bool showing){
@@ -60,6 +61,18 @@ void DrawBoard::DrawMatch(cv::Mat &left, cv::Mat &right, MyMatches &my_matches, 
 	if (showing)
 		while (cv::waitKey() == 27);
 
+}
+void DrawBoard::DrawPose(cv::Mat &left, const Eigen::Matrix3f & R, const Eigen::Vector3f &t,bool status) {
+	Eigen::Vector3f ypr(R2ypr(R));
+	char text_rotation[128];
+	char text_translation[128];
+	char test_status[128];
+	snprintf(text_rotation, 128, "rotation: %3.2f, %3.2f, %3.2f", ypr.x(), ypr.y(), ypr.z());
+	snprintf(text_translation, 128, "translation: %3.2f, %3.2f, %3.2f", t.x(), t.y(), t.z());
+	snprintf(test_status, 128, "status: %d", status);
+	cv::putText(left, text_rotation, cv::Point2i(100, 20), 0, 0.5, cv::Scalar(255, 0, 0));
+	cv::putText(left, text_translation, cv::Point2i(100, 50), 0, 0.5, cv::Scalar(255, 0, 0));
+	cv::putText(left, test_status, cv::Point2i(100, 80), 0, 0.5, cv::Scalar(255, 0, 0));
 }
 
 }

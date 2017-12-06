@@ -16,7 +16,7 @@ public:
 	void Match(KeyPoints &left_key_points,const cv::Mat &left_descriptors,KeyPoints &right_key_points,const cv::Mat&right_descriptors);
 	void StereoMatch();
 	bool RefTrack(Frame::Ptr p_frame_ref, MyMatches&inliers_matches);
-	bool IsKeyFrame(KeyPoints &key_points);
+	bool IsKeyFrame(MyMatches &key_points);
 public:
 	
 	cv::Mat left_descriptors, right_descriptors;
