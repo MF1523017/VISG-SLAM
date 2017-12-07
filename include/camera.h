@@ -7,8 +7,8 @@ namespace VISG {
 		cv::Mat R;
 		cv::Mat t;
 		Extrinsic() {
-			R.create(cv::Size(3, 3), CV_32FC1);
-			t.create(cv::Size(3, 1), CV_32FC1);
+			R.create(cv::Size(3, 3), CV_32F);
+			t.create(cv::Size(3, 1), CV_32F);
 		}
 		~Extrinsic() {
 			R.release();

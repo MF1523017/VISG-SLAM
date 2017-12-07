@@ -26,7 +26,7 @@ CameraInfo::CameraInfo(const sl::CalibrationParameters &rhs) {
 	*this = rhs;
 }
 CameraInfo & CameraInfo::operator = (const sl::CalibrationParameters &rhs) {
-	cv::Mat R_vec(3, 1, CV_32FC1, (void*)rhs.R.ptr());
+	cv::Mat R_vec(3, 1, CV_32F, (void*)rhs.R.ptr());
 	cv::Rodrigues(R_vec, extrinsic.R);
 	extrinsic.t.at<float>(0,0) = rhs.T.x;
 	extrinsic.t.at<float>(1,0) = rhs.T.y;
@@ -41,7 +41,8 @@ std::ostream & operator <<(std::ostream &os, const CameraInfo &rhs) {
 		"Intrinsic: " << std::endl << "left cam: " << std::endl <<
 		"fx: " << rhs.left_cam.fx << " fy: " << rhs.left_cam.fy << " cx: " << rhs.left_cam.cx << " cy: " << rhs.left_cam.cy <<
 		std::endl << "right cam: " << std::endl <<
-		"fx: " << rhs.right_cam.fx << " fy: " << rhs.right_cam.fy << " cx: " << rhs.right_cam.cx << " cy: " << rhs.right_cam.cy;
+		"fx: " << rhs.right_cam.fx << " fy: " << rhs.right_cam.fy << " cx: " << rhs.right_cam.cx << " cy: " << rhs.right_cam.cy <<
+		std::endl << "image height: " <<rhs.left_cam.image_size.height <<" width: " << rhs.left_cam.image_size.width;
 	return os;
 }
 

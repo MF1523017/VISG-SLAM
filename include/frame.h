@@ -15,7 +15,8 @@ public:
 	void ExtractORB(const cv::Mat&img, bool is_left);
 	void Match(KeyPoints &left_key_points,const cv::Mat &left_descriptors,KeyPoints &right_key_points,const cv::Mat&right_descriptors);
 	void StereoMatch();
-	bool RefTrack(Frame::Ptr p_frame_ref, MyMatches&inliers_matches);
+	bool RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches&inliers_matches);
+	bool RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches);
 	bool IsKeyFrame(MyMatches &key_points);
 public:
 	
@@ -33,6 +34,7 @@ private:
 	void Hist(KeyPoints &key_points, std::vector<std::vector<size_t>> &hist);
 	void Reset();
 	bool RecoverPose(const std::vector<cv::Point2f> &points1, const std::vector<cv::Point2f> &points2, const MyMatches &matches,MyMatches &inliers_matches);
+	bool RecoverPose(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, const MyMatches &matches, MyMatches &inliers_matches);
 	Feature::Ptr p_orb_left_;
 	Feature::Ptr p_orb_right_;
 
