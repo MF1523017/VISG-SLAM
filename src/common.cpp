@@ -8,9 +8,9 @@ namespace VISG {
 	float Common::Cy = .0;
 	float Common::FxInv = .0;
 	float Common::FyInv = .0;
-	cv::Mat Common::K = cv::Mat::eye(3, 3, CV_64F);
-	cv::Mat Common::lRr = cv::Mat::eye(3, 3, CV_32FC1);
-	cv::Mat Common::ltr = cv::Mat::zeros(3, 1, CV_32FC1);
+	cv::Mat Common::K = cv::Mat::eye(3, 3, CV_32F);
+	cv::Mat Common::lRr = cv::Mat::eye(3, 3, CV_32F);
+	cv::Mat Common::ltr = cv::Mat::zeros(3, 1, CV_32F);
 	
 	size_t Common::HistBin = 200;
 	int Common::BestOrbDistance = 80;

@@ -46,9 +46,33 @@ void test_Camera(){
 	system("pause");
 }
 
-
-
 void test_VisgSlam() {
 	VisgSlam visg;
 	visg.Run();
+}
+
+void test_VisgSlam(char **argv) {
+	VisgSlam visg;
+	//visg.Run();
+	const std::string file_dir(argv[1]);
+	visg.RecordImages(file_dir);
+}
+
+void test_VisgSlamOffline(char **argv){
+	VisgSlamOffline visg;
+	std::vector<std::string> images;
+	const std::string data_dir(argv[1]);
+	loadImage(data_dir,images);
+	for (size_t i = 0; i < images.size(); ++i) {
+		const std::string left_image(data_dir + "\\cam0\\data\\" + images[i]);
+		const std::string right_image(data_dir + "\\cam1\\data\\" + images[i]);
+		cv::Mat left = cv::imread(left_image);
+		cv::Mat right = cv::imread(right_image);
+		//  cv::Mat img2 = cv::imread(file_name2);
+		if (left.empty() || right.empty()) {
+			std::cout << "error" << std::endl;
+			return;
+		}
+		visg.Run(left, right);
+	}
 }

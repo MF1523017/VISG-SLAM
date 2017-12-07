@@ -79,6 +79,10 @@ namespace VISG {
 		return Eigen::Vector3f(p.x, p.y, p.z);
 	}
 
+	cv::Point3f PEigen2cv(const Eigen::Vector3f &p) {
+		return cv::Point3f(p.x(), p.y(), p.z());
+	}
+
 	Eigen::Vector3f R2ypr(const Eigen::Matrix3f &R) {
 		Eigen::Vector3f n = R.col(0);
 		Eigen::Vector3f o = R.col(1);
@@ -93,5 +97,24 @@ namespace VISG {
 		ypr(2) = r;
 
 		return ypr / M_PI * 180.0;
+	}
+
+
+	void loadImage(const std::string & file_dir, std::vector<std::string> &images) {
+		const std::string data_file(file_dir + "\\cam0\\data.csv");
+		std::ifstream read_images(data_file);
+		std::string line;
+		while (read_images && !read_images.eof()) {
+			std::getline(read_images, line);
+			if ('#' == line[0])
+				continue;
+			size_t pos = line.find(",");
+			auto image_name = line.substr(pos + 1, line.size() - pos - 2);
+			if (image_name.empty())
+				break;
+			//std::cout << "[image_name]: " << image_name << std::endl;
+			images.push_back(image_name);
+		}
+		read_images.close();
 	}
 }

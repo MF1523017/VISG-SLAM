@@ -6,10 +6,20 @@ namespace VISG {
 class VisgSlam {
 public:
 	VisgSlam();
+	void RecordImages(const std::string &data_dir);
 	void Run(cv::Mat left=cv::Mat(),cv::Mat right = cv::Mat());
 private:
 	Camera zed_;
 	cv::Mat left_, right_;
+	TrackerInterface::Ptr tracker_;
+};
+
+class VisgSlamOffline {
+public:
+	VisgSlamOffline();
+	void Run(cv::Mat &left, cv::Mat &right);
+	
+private:
 	TrackerInterface::Ptr tracker_;
 };
 }

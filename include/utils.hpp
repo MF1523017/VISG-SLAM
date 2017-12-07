@@ -30,8 +30,9 @@ namespace VISG {
 	Eigen::Matrix3f Rcv2Eigen(const cv::Mat &R);
 	Eigen::Vector3f Tcv2Eigen(const cv::Mat &t);
 	Eigen::Vector3f Pcv2Eigen(const cv::Point3f &p);
+	cv::Point3f PEigen2cv(const Eigen::Vector3f &p);
 	Eigen::Vector3f R2ypr(const Eigen::Matrix3f &R);
-
+	void loadImage(const std::string & file_dir, std::vector<std::string> &images);
 }
 
 #endif /*__UTILS_HPP__*/
