@@ -68,6 +68,10 @@ namespace VISG {
 	}
 
 	VisgSlamOffline::VisgSlamOffline() :tracker_(new OrbTracker) {
+#ifdef USE_CHESSBOARD
+		chess_ = std::make_shared<Chessboard>(7, 6, 0.025);
+#endif
+		
 		// 720 mode
 		Common::Height = 720;
 		Common::Weight = 1280;
@@ -81,7 +85,7 @@ namespace VISG {
 		Common::ltr.at<float>(0,0) = 0.12;
 		Common::FxInv = 1.0 / Common::Fx;
 		Common::FyInv = 1.0 / Common::Fy;
-
+		
 		// vga mode
 		/*
 		Common::Height = 376;
@@ -103,6 +107,14 @@ namespace VISG {
 		cv::cvtColor(left, left_, CV_RGB2GRAY);
 		cv::cvtColor(left, right_, CV_RGB2GRAY);
 		(*tracker_)(left_, right_);
+#ifdef USE_CHESSBOARD	
+		Eigen::Matrix3f R_truth,R;
+		Eigen::Vector3f t_truth,t;
+		auto ret = chess_->GetPose(left, Common::K, R_truth, t_truth);
+		std::cout << "[VisgSlamOffline Run] chess get pose: " << ret << std::endl;
+		tracker_->GetPose(R, t);
+		std::cout << "[VisgSlamOffline Run] t error: " << (t_truth - t).transpose() << std::endl;
+#endif
 		cv::waitKey(10);
 	}
 }

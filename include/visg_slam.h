@@ -2,6 +2,7 @@
 #define VISG_SLAM_H
 #include "camera.h"
 #include "orb_tracker.h"
+#include "chessboard.h"
 namespace VISG {
 class VisgSlam {
 public:
@@ -20,6 +21,9 @@ public:
 	void Run(cv::Mat &left, cv::Mat &right);
 	
 private:
+#ifdef USE_CHESSBOARD
+	Chessboard::Ptr chess_;
+#endif
 	TrackerInterface::Ptr tracker_;
 };
 }

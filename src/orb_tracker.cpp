@@ -36,7 +36,7 @@ namespace VISG {
 			p_frame_last_ = p_frame_ref_ = p_frame_cur_;
 			ref_image = left.clone();
 			std::cout << "init sucessful! " << std::endl;
-			DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points, false);
+		//	DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points, false);
 			return true;
 		}
 		return false;
@@ -51,10 +51,10 @@ namespace VISG {
 		// recover pose using 2d to 3d corrspondence
 		auto ret = p_frame_cur_->RefTrack2D3D(p_frame_ref_, my_matches);
 		std::cout << "[OrbTracker Track] RefTrack2D3D ret: " << ret << " mathches size: " << my_matches.size() << std::endl;
-		DrawBoard::handle().DrawPose(left, p_frame_cur_->wRc, p_frame_cur_->wTc, ret);
-		DrawBoard::handle().DrawMatch(ref_image, left, my_matches, p_frame_ref_->left_key_points, p_frame_cur_->left_key_points, false);
+		/*DrawBoard::handle().DrawPose(left, p_frame_cur_->wRc, p_frame_cur_->wTc, ret);
+		DrawBoard::handle().DrawMatch(ref_image, left, my_matches, p_frame_ref_->left_key_points, p_frame_cur_->left_key_points, false);*/
 		
-		if (p_frame_cur_->IsKeyFrame(my_matches)) {
+		if (ret && p_frame_cur_->IsKeyFrame(my_matches)) {
 			p_frame_cur_->StereoMatch();
 			p_frame_ref_.swap(p_frame_cur_);// = p_frame_cur_;
 			ref_image = left.clone();
@@ -70,8 +70,10 @@ namespace VISG {
 		// TODO not defined
 		;
 	}
-	int OrbTracker::GetPose(cv::Mat&R, cv::Mat &t) const {
+	int OrbTracker::GetPose(Eigen::Matrix3f& R, Eigen::Vector3f &t) const {
 		// TODO not defined
+		R = p_frame_cur_->wRc;
+		t = p_frame_cur_->wTc;
 		return 0;
 	}
 }

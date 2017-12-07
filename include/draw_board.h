@@ -15,6 +15,7 @@ public:
 	void DrawMatch(cv::Mat &left, cv::Mat &right, MatchPoints &match_points, bool showing = true);
 	void DrawMatch(cv::Mat &left, cv::Mat &right, MyMatches &my_matches, const KeyPoints& key_points1, const KeyPoints& key_points2, bool showing = true);
 	void DrawPose(cv::Mat &left, const Eigen::Matrix3f & R, const Eigen::Vector3f &t,bool status);
+	void DrawCorner(cv::Mat &img, const cv::Size &pattern_size, const std::vector<cv::Point2f> & corners, bool patternfound);
 };
 }
 #endif

@@ -98,7 +98,21 @@ namespace VISG {
 
 		return ypr / M_PI * 180.0;
 	}
+	Eigen::Matrix4f HPose(const Eigen::Matrix3f &R, const Eigen::Vector3f &t) {
+		Eigen::Matrix4f T;
+		T << R(0, 0), R(0, 1), R(0, 2), t.x(),
+			R(1, 0), R(1, 1), R(1, 2), t.y(),
+			R(2, 0), R(2, 1), R(2, 2), t.z(),
+			0, 0, 0, 1;
+		return T;
+	}
 
+	void HPose2Rt(const Eigen::Matrix4f &T, Eigen::Matrix3f &R, Eigen::Vector3f &t) {
+		R << T(0,0),T(0,1),T(0,2),
+			T(1, 0), T(1, 1), T(1, 2),
+			T(2, 0), T(2, 1), T(2, 2);
+		t << T(0, 3), T(1, 3), T(2, 3);
+	}
 
 	void loadImage(const std::string & file_dir, std::vector<std::string> &images) {
 		const std::string data_file(file_dir + "\\cam0\\data.csv");

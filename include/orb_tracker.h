@@ -12,7 +12,7 @@ public:
 	virtual void operator()(cv::Mat &left, cv::Mat &right);
 	virtual bool Track(cv::Mat &left, cv::Mat &right);
 	virtual void Reboot();
-	virtual int GetPose(cv::Mat&R, cv::Mat &t) const;
+	virtual int GetPose(Eigen::Matrix3f& R, Eigen::Vector3f &t) const;
 	virtual std::vector<cv::Point3f> GetMapPoints()const;
 private:
 	Frame::Ptr p_frame_cur_;

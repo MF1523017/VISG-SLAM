@@ -5,8 +5,10 @@ lMr: the right image corr to left image corr
 */
 #include <opencv2/opencv.hpp>
 #include <memory>
+#include <Eigen/Dense>
 #include <utility>
 #include <algorithm>
+#define USE_CHESSBOARD
 namespace VISG {
 	struct Common {
 		static size_t Height;
