@@ -67,12 +67,12 @@ void DrawBoard::DrawPose(cv::Mat &left, const Eigen::Matrix3f & R, const Eigen::
 	char text_rotation[128];
 	char text_translation[128];
 	char test_status[128];
-	snprintf(text_rotation, 128, "rotation: %3.2f, %3.2f, %3.2f", ypr.x(), ypr.y(), ypr.z());
-	snprintf(text_translation, 128, "translation: %3.2f, %3.2f, %3.2f", t.x(), t.y(), t.z());
+	snprintf(text_rotation, 128, "rotation: %3.3f, %3.3f, %3.3f", ypr.x(), ypr.y(), ypr.z());
+	snprintf(text_translation, 128, "translation: %3.3f, %3.3f, %3.3f", t.x(), t.y(), t.z());
 	snprintf(test_status, 128, "status: %d", status);
-	cv::putText(left, text_rotation, cv::Point2i(100, 20), 0, 0.5, cv::Scalar(255, 0, 0));
-	cv::putText(left, text_translation, cv::Point2i(100, 50), 0, 0.5, cv::Scalar(255, 0, 0));
-	cv::putText(left, test_status, cv::Point2i(100, 80), 0, 0.5, cv::Scalar(255, 0, 0));
+	cv::putText(left, text_rotation, cv::Point2i(100, 20), 0, 0.5, cv::Scalar(255, 0, 255));
+	cv::putText(left, text_translation, cv::Point2i(100, 50), 0, 0.5, cv::Scalar(255, 0, 255));
+	cv::putText(left, test_status, cv::Point2i(100, 80), 0, 0.5, cv::Scalar(255, 0, 255));
 }
 
 void DrawBoard::DrawCorner(cv::Mat &img,const cv::Size &pattern_size,const std::vector<cv::Point2f> & corners,bool patternfound) {

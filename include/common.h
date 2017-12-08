@@ -8,7 +8,7 @@ lMr: the right image corr to left image corr
 #include <Eigen/Dense>
 #include <utility>
 #include <algorithm>
-#define USE_CHESSBOARD
+//#define USE_CHESSBOARD
 namespace VISG {
 	struct Common {
 		static size_t Height;

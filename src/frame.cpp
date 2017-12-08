@@ -165,6 +165,8 @@ bool Frame::RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 		std::swap(inliers_matches, matches1);
 		return false;
 	}
+	wRc = p_frame_ref->wRc * wRc;
+	wTc = p_frame_ref->wRc * wTc + p_frame_ref->wTc;
 	return true;
 }
 
@@ -230,6 +232,7 @@ bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vect
 		return false;
 	}
 	cv::Mat Rvec,t,mask,R;
+	// R t: brings points from the model coordinate system to the camera coordinate system
 	// bool ret = cv::solvePnP(points3,points2,cam.K(),cv::Mat(),Rvec,t_,false,cv::SOLVEPNP_ITERATIVE);
 	bool ret = cv::solvePnPRansac(points3, points2, Common::K, cv::Mat(), Rvec, t,true,100,8,0.99,mask);
 	if (!ret) {
@@ -245,10 +248,11 @@ bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vect
 		if (status) {
 			inliers_matches.push_back(matches[i]);
 		}
-}
+	}
 	cv::Rodrigues(Rvec, R);
-	wRc = Rcv2Eigen(R);
-	wTc = Tcv2Eigen(t);
+	
+	wRc = Rcv2Eigen(R).transpose();;
+	wTc = - wRc * Tcv2Eigen(t);
 	return true;
 }
 

@@ -111,9 +111,9 @@ namespace VISG {
 		Eigen::Matrix3f R_truth,R;
 		Eigen::Vector3f t_truth,t;
 		auto ret = chess_->GetPose(left, Common::K, R_truth, t_truth);
-		std::cout << "[VisgSlamOffline Run] chess get pose: " << ret << std::endl;
+		//std::cout << "[VisgSlamOffline Run] chess get pose: " << ret << std::endl;
 		tracker_->GetPose(R, t);
-		std::cout << "[VisgSlamOffline Run] t error: " << (t_truth - t).transpose() << std::endl;
+		//std::cout << "[VisgSlamOffline Run] t error: " << (t_truth - t).transpose() << std::endl;
 #endif
 		cv::waitKey(10);
 	}

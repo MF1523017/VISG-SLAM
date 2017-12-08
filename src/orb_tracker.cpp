@@ -46,13 +46,13 @@ namespace VISG {
 	//	std::cout << "[OrbTracker Track] p_frame_ref_ status: before " << p_frame_ref_.use_count() << std::endl;
 		MyMatches my_matches;
 		// recover pose using  2d to 2d corrspondence 
-		/*auto ret = p_frame_cur_->RefTrack2D2D(p_frame_ref_, my_matches);
-		std::cout << "[OrbTracker Track] RefTrack2D2D ret: " << ret << " mathches size: " << my_matches.size() << std::endl;*/
+		auto ret = p_frame_cur_->RefTrack2D2D(p_frame_ref_, my_matches);
+		std::cout << "[OrbTracker Track] RefTrack2D2D ret: " << ret << " mathches size: " << my_matches.size() << std::endl;
 		// recover pose using 2d to 3d corrspondence
-		auto ret = p_frame_cur_->RefTrack2D3D(p_frame_ref_, my_matches);
-		std::cout << "[OrbTracker Track] RefTrack2D3D ret: " << ret << " mathches size: " << my_matches.size() << std::endl;
-		/*DrawBoard::handle().DrawPose(left, p_frame_cur_->wRc, p_frame_cur_->wTc, ret);
-		DrawBoard::handle().DrawMatch(ref_image, left, my_matches, p_frame_ref_->left_key_points, p_frame_cur_->left_key_points, false);*/
+		/*auto ret = p_frame_cur_->RefTrack2D3D(p_frame_ref_, my_matches);
+		std::cout << "[OrbTracker Track] RefTrack2D3D ret: " << ret << " mathches size: " << my_matches.size() << std::endl;*/
+		DrawBoard::handle().DrawPose(left, p_frame_cur_->wRc, p_frame_cur_->wTc, ret);
+		DrawBoard::handle().DrawMatch(ref_image, left, my_matches, p_frame_ref_->left_key_points, p_frame_cur_->left_key_points, false);
 		
 		if (ret && p_frame_cur_->IsKeyFrame(my_matches)) {
 			p_frame_cur_->StereoMatch();

@@ -34,6 +34,7 @@ namespace VISG {
 		cv::imshow("chessboard corners", gray);
 		cv::waitKey();*/
 		cv::Mat Rvec,tvec,cvR,mask;
+		//R t: brings points from the model coordinate system to the camera coordinate system
 		bool ret = cv::solvePnPRansac(points3_, corners, camera_matrix, cv::Mat(), Rvec, tvec, true, 100, 8, 0.99, mask);
 		if (!ret) {
 			std::cout << "[Chessboard::GetPose] pnp error" << std::endl;
@@ -53,10 +54,10 @@ namespace VISG {
 			std::cout << "[Chessboard::GetPose] T0_: " << T0_ << std::endl;
 		}
 		
-		Eigen::Matrix4f wTci = HPose(tmp_R, tmp_t);
+		Eigen::Matrix4f ciTw = HPose(tmp_R, tmp_t);
 		// TODO make sure the transform 
-		Eigen::Matrix4f c0Tci =  wTci.inverse() *T0_;
-		std::cout << "[Chessboard::GetPose] c0Tci: " << c0Tci << std::endl;
+		Eigen::Matrix4f c0Tci =  T0_ * ciTw.inverse();
+		//std::cout << "[Chessboard::GetPose] c0Tci: " << c0Tci << std::endl;
 		HPose2Rt(c0Tci, R, t);
 		DrawBoard::handle().DrawPose(img, R, t, ret);
 		DrawBoard::handle().DrawCorner(img, pattern_size_, corners, patternfound);
