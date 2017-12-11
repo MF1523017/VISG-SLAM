@@ -104,7 +104,7 @@ namespace VISG {
 			R(1, 0), R(1, 1), R(1, 2), t.y(),
 			R(2, 0), R(2, 1), R(2, 2), t.z(),
 			0, 0, 0, 1;
-		return T;
+		return T.cast<float>();
 	}
 
 	void HPose2Rt(const Eigen::Matrix4f &T, Eigen::Matrix3f &R, Eigen::Vector3f &t) {

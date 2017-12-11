@@ -10,14 +10,14 @@ namespace VISG {
 			left_.copyTo(left_);
 			right_.copyTo(right_);
 			wRc = p_frame->wRc;
-			wTc = p_frame->wTc;
+			wtc = p_frame->wtc;
 		}
 		void Match();
 	public:
 		using Ptr = std::shared_ptr<KeyFrame>;
 		static size_t keys_th_tracked, keys_th_created;//key points' threshold 
 		Eigen::Matrix3f wRc;//camera to world;
-		Eigen::Vector3f wTc;
+		Eigen::Vector3f wtc;
 	private:
 		cv::Mat left_;
 		cv::Mat right_;

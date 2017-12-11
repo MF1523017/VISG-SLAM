@@ -8,7 +8,12 @@ lMr: the right image corr to left image corr
 #include <Eigen/Dense>
 #include <utility>
 #include <algorithm>
+
+#include "type.h"
+
 //#define USE_CHESSBOARD
+#define USE_PROJECT_ERROR
+#define DRAW
 namespace VISG {
 	struct Common {
 		static size_t Height;
@@ -18,6 +23,7 @@ namespace VISG {
 		static cv::Mat K;
 		static cv::Mat lRr;
 		static cv::Mat ltr;
+		static float BaseLine;
 		static size_t HistBin;
 		static int BestOrbDistance;
 		static size_t FeaturesNum;

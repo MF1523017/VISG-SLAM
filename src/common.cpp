@@ -11,7 +11,7 @@ namespace VISG {
 	cv::Mat Common::K = cv::Mat::eye(3, 3, CV_32F);
 	cv::Mat Common::lRr = cv::Mat::eye(3, 3, CV_32F);
 	cv::Mat Common::ltr = cv::Mat::zeros(3, 1, CV_32F);
-	
+	float Common::BaseLine = 0.12;
 	size_t Common::HistBin = 200;
 	int Common::BestOrbDistance = 80;
 	size_t Common::FeaturesNum = 1000;

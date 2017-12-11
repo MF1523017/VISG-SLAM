@@ -51,8 +51,8 @@ void DrawBoard::DrawMatch(cv::Mat &left, cv::Mat &right, MyMatches &my_matches, 
 		const int & trainIdx = my_matches[i].second;
 		cv::Point2f lp(key_points1[queryIdx].pt);
 		cv::Point2f rp(key_points2[trainIdx].pt.x + left_size.width, key_points2[trainIdx].pt.y);
-		cv::circle(large, lp, 10, cv::Scalar(255, 0, 0));
-		cv::circle(large, rp, 10, cv::Scalar(255, 0, 0));
+		cv::circle(large, lp, 4, cv::Scalar(255, 0, 0));
+		cv::circle(large, rp, 4, cv::Scalar(255, 0, 0));
 		cv::line(large, lp, rp, cv::Scalar(0, 0, 255));
 		//cv::putText(large, std::to_string(i), lp, 0, 0.5, cv::Scalar(255, 0, 0));
 		//cv::putText(large, std::to_string(i), rp, 0, 0.5, cv::Scalar(255, 0, 0));

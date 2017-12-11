@@ -1,10 +1,5 @@
 #ifndef __UTILS_HPP__
 #define __UTILS_HPP__
-
-#define NDEBUG
-
-
-
 #include <math.h>
 #include <stdint.h>
 #include <vector>
@@ -17,8 +12,6 @@
 #ifndef M_PI
 #define M_PI 3.1416f
 #endif
-// sl2cv
-
 namespace VISG {
 	// convert sl Mat to cv Mat
 	cv::Mat slMat2cvMat(sl::Mat& input);

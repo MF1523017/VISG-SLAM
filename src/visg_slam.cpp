@@ -15,6 +15,7 @@ namespace VISG {
 
 		Common::lRr = zed_.cam_info.extrinsic.R.clone();
 		Common::ltr = zed_.cam_info.extrinsic.t.clone();
+		Common::BaseLine = Common::ltr.at<float>(0, 0);
 		Common::FxInv = 1.0 / Common::Fx;
 		Common::FyInv = 1.0 / Common::Fy;
 		//std::cout << zed_.cam_info << std::endl;
@@ -83,6 +84,7 @@ namespace VISG {
 			0, Common::Fy, Common::Cy,
 			0, 0, 1);
 		Common::ltr.at<float>(0,0) = 0.12;
+		Common::BaseLine = 0.12;
 		Common::FxInv = 1.0 / Common::Fx;
 		Common::FyInv = 1.0 / Common::Fy;
 		
@@ -115,6 +117,6 @@ namespace VISG {
 		tracker_->GetPose(R, t);
 		//std::cout << "[VisgSlamOffline Run] t error: " << (t_truth - t).transpose() << std::endl;
 #endif
-		cv::waitKey(10);
+		cv::waitKey();
 	}
 }

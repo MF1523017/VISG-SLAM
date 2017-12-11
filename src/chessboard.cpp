@@ -1,7 +1,7 @@
 #include "chessboard.h"
 #include "utils.hpp"
 #include "draw_board.h"
-
+#include "optimizer.h"
 namespace VISG {
 	Chessboard::Chessboard(size_t row, size_t col, float grid_length):is_first_frame_(true),grid_length_(grid_length) {
 		pattern_size_.height = row;
@@ -53,12 +53,17 @@ namespace VISG {
 			is_first_frame_ = false;
 			std::cout << "[Chessboard::GetPose] T0_: " << T0_ << std::endl;
 		}
-		
+#ifdef USE_PROJECT_ERROR
+		std::vector<cv::Point2f> pro_points;
+		float e = Optimizer::ProjectPoints(points3_, corners, tmp_R.transpose(), -tmp_R.transpose()*tmp_t, pro_points);
+		std::cout << "[Chessboard::GetPose] project error: " << e << std::endl;
+#endif
 		Eigen::Matrix4f ciTw = HPose(tmp_R, tmp_t);
 		// TODO make sure the transform 
 		Eigen::Matrix4f c0Tci =  T0_ * ciTw.inverse();
 		//std::cout << "[Chessboard::GetPose] c0Tci: " << c0Tci << std::endl;
 		HPose2Rt(c0Tci, R, t);
+
 		DrawBoard::handle().DrawPose(img, R, t, ret);
 		DrawBoard::handle().DrawCorner(img, pattern_size_, corners, patternfound);
 		return true;

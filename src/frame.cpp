@@ -2,12 +2,14 @@
 #include "keyframe.h"
 #include "matcher.h"
 #include "utils.hpp"
+
 #include <thread>
 
 namespace VISG {
 void Frame::SetPose(const Eigen::Matrix3f &R, const Eigen::Vector3f &t) {
 	wRc = R;
-	wTc = t;
+	wtc = t;
+	wTc = HPose(R, t);
 }
 void Frame::ExtractFeatures(const cv::Mat&left, const cv::Mat&right) {
 	std::thread thread_left(&Frame::ExtractORB, this, left, true);
@@ -84,7 +86,8 @@ void Frame::Hist(KeyPoints &key_points, std::vector<std::vector<size_t>> &hist) 
 	}
 }
 
-void Frame::StereoMatch() {
+size_t Frame::StereoMatch() {
+	size_t matches_counter = 0;
 	Reset();
 	// histed right image key points by y
 	int pixel_diff = Common::Weight / 10;
@@ -129,10 +132,12 @@ void Frame::StereoMatch() {
 			const float x = (lp.x - Common::Cx)*z*Common::FxInv;
 			const float y = (lp.y - Common::Cy)*z*Common::FyInv;
 			Eigen::Vector3f x3Dc(x, y, z);
-			map_points[i] = Eigen::Vector3f(wRc * x3Dc + wTc);
+			map_points[i] = wRc * x3Dc + wtc;
 			inliers[i] = true;
+			++matches_counter;
 		}
 	}
+	return matches_counter;
 }
 
 bool Frame::RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
@@ -158,19 +163,28 @@ bool Frame::RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 		points2.push_back(left_key_points[trainIdx].pt);
 		matches1.push_back(matches[i]);
 	}
-	if (points1.empty())
+	if (points1.size() < 8) {
+		std::cout << "[Frame::RefTrack2D2D] error: points size is too less: " << points1.size() << std::endl;
 		return false;
-	bool ret = RecoverPose(points1, points2, matches1,inliers_matches);
+	}
+	cv::Mat R, t;
+	bool ret = RecoverPose(points1, points2, matches1,inliers_matches,R,t);
 	if (!ret) {
 		std::swap(inliers_matches, matches1);
 		return false;
 	}
-	wRc = p_frame_ref->wRc * wRc;
-	wTc = p_frame_ref->wRc * wTc + p_frame_ref->wTc;
+	 
+	Eigen::Matrix3f cRr = Rcv2Eigen(R);//ref to cur
+	Eigen::Vector3f ctr = Tcv2Eigen(t);
+	Eigen::Matrix4f cTr = HPose(cRr, ctr);
+	Eigen::Matrix4f wTr = p_frame_ref->wTc;
+	wTc = wTr * (cTr.inverse());
+	HPose2Rt(wTc, wRc, wtc);
 	return true;
 }
 
-bool Frame::RecoverPose(const std::vector<cv::Point2f> &points1, const std::vector<cv::Point2f> &points2, const MyMatches &matches, MyMatches &inliers_matches) {
+bool Frame::RecoverPose(const std::vector<cv::Point2f> &points1, const std::vector<cv::Point2f> &points2, const MyMatches &matches, 
+	MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t) {
 	cv::Mat mask;
 	cv::Mat E = cv::findEssentialMat(points1, points2, Common::K, cv::RANSAC, 0.999, 1.0, mask);
 	if (E.empty())
@@ -185,10 +199,7 @@ bool Frame::RecoverPose(const std::vector<cv::Point2f> &points1, const std::vect
 			inliers_matches.push_back(matches[i]);
 		}
 	}
-	cv::Mat R, t;
 	cv::recoverPose(E, points1, points2, Common::K, R, t, mask);// will change the status of the mask
-	wRc = Rcv2Eigen(R);
-	wTc = Tcv2Eigen(t);
 	return true;
 }
 
@@ -216,22 +227,31 @@ bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 		points3.push_back(PEigen2cv(ref_map_points[queryIdx]));
 		matches1.push_back(matches[i]);
 	}
-	if (points2.empty())
+	if (points2.size() < 3) {
+		std::cout << "[Frame::RefTrack2D2D] error: points size is too less: " << points2.size() << std::endl;
 		return false;
-	bool ret = RecoverPose(points2, points3, matches1, inliers_matches);
+	}
+	cv::Mat R, t;
+	bool ret = RecoverPose(points2, points3, matches1, inliers_matches,R,t);
 	if (!ret) {
 		std::swap(inliers_matches, matches1);
 		return false;
 	}
+	Eigen::Matrix3f cRw = Rcv2Eigen(R);//world to cur
+	Eigen::Vector3f ctw = Tcv2Eigen(t);
+	Eigen::Matrix4f cTw = HPose(cRw, ctw);
+	wTc = cTw.inverse();
+	HPose2Rt(wTc, wRc, wtc);
 	return true;
 }
 
-bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, const MyMatches &matches, MyMatches &inliers_matches) {
+bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, const MyMatches &matches, 
+	MyMatches &inliers_matches, cv::Mat &R,cv::Mat &t) {
 	if (points2.size() != points3.size()) {
 		std::cout << "[Frame::RecoverPose] correspondences error " << std::endl;
 		return false;
 	}
-	cv::Mat Rvec,t,mask,R;
+	cv::Mat Rvec,mask;
 	// R t: brings points from the model coordinate system to the camera coordinate system
 	// bool ret = cv::solvePnP(points3,points2,cam.K(),cv::Mat(),Rvec,t_,false,cv::SOLVEPNP_ITERATIVE);
 	bool ret = cv::solvePnPRansac(points3, points2, Common::K, cv::Mat(), Rvec, t,true,100,8,0.99,mask);
@@ -250,9 +270,19 @@ bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vect
 		}
 	}
 	cv::Rodrigues(Rvec, R);
-	
-	wRc = Rcv2Eigen(R).transpose();;
-	wTc = - wRc * Tcv2Eigen(t);
+
+#ifdef USE_PROJECT_ERROR
+	std::vector<cv::Point2f> pro_points;
+	cv::projectPoints(points3, Rvec, t, Common::K, cv::Mat(), pro_points);
+	float pro_error = 0;
+	for (size_t i = 0; i < points2.size(); ++i) {
+		cv::Point2f error = points2[i] - pro_points[i];
+		pro_error += (fabs(error.x) + fabs(error.y));
+	}
+	std::cout << "[Frame::RecoverPose] pro_error: " << pro_error / points2.size() << std::endl;
+
+#endif
+
 	return true;
 }
 

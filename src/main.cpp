@@ -4,6 +4,7 @@
 
 int main(int argc, char **argv) {
 //	test_Camera()
+#if 0
 	if (argc == 1)
 		test_VisgSlam();
 	else if (argc == 2) {
@@ -14,5 +15,8 @@ int main(int argc, char **argv) {
 	}
 	std::cout << "usage: " << argv[0] << " (for running stereo slam) or " << argv[0] << " data_dir (for recording data)" << std::endl;
 	system("pause");
+#else
+	test_offline();
+#endif
     return 0;
 }
