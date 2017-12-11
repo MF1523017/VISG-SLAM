@@ -128,7 +128,9 @@ size_t Frame::StereoMatch() {
 		if (best_dist < Common::BestOrbDistance) {
 			const float  rx = right_key_points[best_r_idx].pt.x;
 			match_points[i] = Eigen::Vector3f(lp.x, lp.y, rx);
-			float z = Common::ltr.at<float>(0, 0) * Common::Fx / (lp.x - rx);
+			float z = Common::BaseLine * Common::Fx / (lp.x - rx);
+			if (z <= 0)
+				continue;
 			const float x = (lp.x - Common::Cx)*z*Common::FxInv;
 			const float y = (lp.y - Common::Cy)*z*Common::FyInv;
 			Eigen::Vector3f x3Dc(x, y, z);

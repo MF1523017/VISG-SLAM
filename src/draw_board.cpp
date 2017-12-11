@@ -51,9 +51,9 @@ void DrawBoard::DrawMatch(cv::Mat &left, cv::Mat &right, MyMatches &my_matches, 
 		const int & trainIdx = my_matches[i].second;
 		cv::Point2f lp(key_points1[queryIdx].pt);
 		cv::Point2f rp(key_points2[trainIdx].pt.x + left_size.width, key_points2[trainIdx].pt.y);
-		cv::circle(large, lp, 4, cv::Scalar(255, 0, 0));
-		cv::circle(large, rp, 4, cv::Scalar(255, 0, 0));
-		cv::line(large, lp, rp, cv::Scalar(0, 0, 255));
+		cv::circle(large, lp, 4, cv::Scalar(125, 0, 0));
+		cv::circle(large, rp, 4, cv::Scalar(125, 0, 0));
+		cv::line(large, lp, rp, cv::Scalar(0, 0, 100));
 		//cv::putText(large, std::to_string(i), lp, 0, 0.5, cv::Scalar(255, 0, 0));
 		//cv::putText(large, std::to_string(i), rp, 0, 0.5, cv::Scalar(255, 0, 0));
 	}
@@ -78,6 +78,14 @@ void DrawBoard::DrawPose(cv::Mat &left, const Eigen::Matrix3f & R, const Eigen::
 void DrawBoard::DrawCorner(cv::Mat &img,const cv::Size &pattern_size,const std::vector<cv::Point2f> & corners,bool patternfound) {
 	cv::drawChessboardCorners(img, pattern_size, corners, patternfound);
 	cv::imshow("black_board", img);
+}
+
+void DrawBoard::DrawProjectError(cv::Mat &img, const KeyPoints &key_points, const MyMatches &matches, const std::vector<cv::Point2f> &pro_points) {
+	for (size_t i = 0; i < matches.size(); ++i) {
+		size_t trainIdx = matches[i].second;
+		cv::circle(img, pro_points[i], 4, cv::Scalar(0, 0, 255));
+		cv::line(img, key_points[trainIdx].pt, pro_points[i], cv::Scalar(255, 0, 0),2);
+	}
 }
 
 }

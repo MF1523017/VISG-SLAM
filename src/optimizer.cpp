@@ -77,6 +77,8 @@ namespace VISG {
 			const size_t queryIdx = matches[i].first;
 			const size_t trainIdx = matches[i].second;
 			Eigen::Vector3f pc = R.transpose() * (map_points[queryIdx] - t);
+			if (pc.z() <= 0)
+				continue;
 			float u = fx * pc.x() / pc.z() + cx;
 			float v = fy * pc.y() / pc.z() + cy;
 			const cv::Point2f pro_point = cv::Point2f(u, v);
