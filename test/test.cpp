@@ -76,3 +76,24 @@ void test_VisgSlamOffline(char **argv){
 		visg.Run(left, right);
 	}
 }
+
+
+void test_offline() {
+	VisgSlamOffline visg;
+	std::vector<std::string> images;
+	//const std::string data_dir("H:\\dataset\\20171207_chessboard\\20171207");
+	const std::string data_dir("H:\\dataset\\20171207_demo\\20171207");
+	loadImage(data_dir, images);
+	for (size_t i = 0; i < images.size(); ++i) {
+		const std::string left_image(data_dir + "\\cam0\\data\\" + images[i]);
+		const std::string right_image(data_dir + "\\cam1\\data\\" + images[i]);
+		cv::Mat left = cv::imread(left_image);
+		cv::Mat right = cv::imread(right_image);
+		//  cv::Mat img2 = cv::imread(file_name2);
+		if (left.empty() || right.empty()) {
+			std::cout << "error" << std::endl;
+			return;
+		}
+		visg.Run(left, right);
+	}
+}
