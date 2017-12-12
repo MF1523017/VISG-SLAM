@@ -2,7 +2,7 @@
 
 namespace VISG {
 	//R,t:brings points from the  camera coordinate system  to the world coordinate system
-	// map_points : is in thi world coordinate system
+	// map_points : is in the world coordinate system
 	float Optimizer::ProjectPoints(const std::vector<cv::Point3f> &map_points, const std::vector<cv::Point2f> &img_points, const Eigen::Matrix3f &R, const Eigen::Vector3f &t,
 		std::vector<cv::Point2f> &pro_points) {
 		if (map_points.empty())
@@ -87,5 +87,43 @@ namespace VISG {
 			pro_points.push_back(pro_point);
 		}
 		return project_error / matches.size();
+	}
+
+	void PnpSolver::Solve(const std::vector<cv::Point2f>&points2, const std::vector<cv::Point3f>&points3, cv::Mat &R, cv::Mat&t) {
+		double *pose = new double[6]{0};
+		std::cout << "[PnpSolver::Solve] pose before: ";
+		for (size_t i = 0; i < 6; ++i) {
+			std::cout << pose[i] << " ";
+		}
+		std::cout << std::endl;
+		double *p3d = new double[3 * points3.size()];
+		for (size_t i = 0; i < points2.size(); ++i) {
+			p3d[3*i] = static_cast<double>(points3[i].x);
+			p3d[3*i+1] = static_cast<double>(points3[i].y);
+			p3d[3*i+2] = static_cast<double>(points3[i].z);
+			ceres::CostFunction *cost_function = ProjectionError::Create(static_cast<double>(points2[i].x),
+																		static_cast<double>(points2[i].y));
+			problem_.AddResidualBlock(cost_function, nullptr, pose, p3d+3*i);
+		}
+		ceres::Solver::Options options;
+		options.linear_solver_type = ceres::DENSE_SCHUR;
+		options.minimizer_progress_to_stdout = true;
+		ceres::Solver::Summary summary;
+		ceres::Solve(options, &problem_, &summary);
+		std::cout << summary.FullReport() << std::endl;
+
+		std::cout << std::endl << "[PnpSolver::Solve] pose after:";
+		for (size_t i = 0; i < 6; ++i) {
+			std::cout << pose[i] << " ";
+		}
+		std::cout << std::endl;
+		R.at<float>(0, 0) = pose[0];
+		R.at<float>(1, 0) = pose[1];
+		R.at<float>(2, 0) = pose[2];
+		t.at<float>(0, 0) = pose[3];
+		t.at<float>(1, 0) = pose[4];
+		t.at<float>(2, 0) = pose[5];
+		delete[]pose;
+		delete[]p3d;
 	}
 }
