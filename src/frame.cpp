@@ -2,7 +2,7 @@
 #include "keyframe.h"
 #include "matcher.h"
 #include "utils.hpp"
-
+#include "optimizer.h"
 #include <thread>
 
 namespace VISG {
@@ -133,8 +133,8 @@ size_t Frame::StereoMatch() {
 				continue;
 			const float x = (lp.x - Common::Cx)*z*Common::FxInv;
 			const float y = (lp.y - Common::Cy)*z*Common::FyInv;
-			Eigen::Vector3f x3Dc(x, y, z);
-			map_points[i] = wRc * x3Dc + wtc;
+			Eigen::Vector3f p3Dc(x, y, z);
+			map_points[i] = wRc * p3Dc + wtc;
 			inliers[i] = true;
 			++matches_counter;
 		}
@@ -169,7 +169,7 @@ bool Frame::RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 		std::cout << "[Frame::RefTrack2D2D] error: points size is too less: " << points1.size() << std::endl;
 		return false;
 	}
-	cv::Mat R, t;
+	cv::Mat R(3, 3, CV_32F), t(3, 1, CV_32F);
 	bool ret = RecoverPose(points1, points2, matches1,inliers_matches,R,t);
 	if (!ret) {
 		std::swap(inliers_matches, matches1);
@@ -230,20 +230,25 @@ bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 		matches1.push_back(matches[i]);
 	}
 	if (points2.size() < 3) {
-		std::cout << "[Frame::RefTrack2D2D] error: points size is too less: " << points2.size() << std::endl;
+		std::cout << "[Frame::RefTrack2D3D] error: points size is too less: " << points2.size() << std::endl;
 		return false;
 	}
-	cv::Mat R, t;
-	bool ret = RecoverPose(points2, points3, matches1, inliers_matches,R,t);
-	if (!ret) {
+	cv::Mat R(3,3,CV_32F), t(3,1,CV_32F);
+	bool ret;
+	//ret = RecoverPose(points2, points3, matches1, inliers_matches,R,t);
+	/*if (!ret) {
 		std::swap(inliers_matches, matches1);
 		return false;
-	}
+	}*/
+
+	ret = RecoverPoseWithPnpSolver(points2, points3, R, t);
+	std::swap(inliers_matches, matches1);
 	Eigen::Matrix3f cRw = Rcv2Eigen(R);//world to cur
 	Eigen::Vector3f ctw = Tcv2Eigen(t);
 	Eigen::Matrix4f cTw = HPose(cRw, ctw);
 	wTc = cTw.inverse();
 	HPose2Rt(wTc, wRc, wtc);
+
 	return true;
 }
 
@@ -253,7 +258,7 @@ bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vect
 		std::cout << "[Frame::RecoverPose] correspondences error " << std::endl;
 		return false;
 	}
-	cv::Mat Rvec,mask;
+	cv::Mat Rvec(3,1,CV_32F),mask;
 	// R t: brings points from the model coordinate system to the camera coordinate system
 	// bool ret = cv::solvePnP(points3,points2,cam.K(),cv::Mat(),Rvec,t_,false,cv::SOLVEPNP_ITERATIVE);
 	bool ret = cv::solvePnPRansac(points3, points2, Common::K, cv::Mat(), Rvec, t,true,100,8,0.99,mask);
@@ -285,6 +290,26 @@ bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vect
 
 #endif
 
+	return true;
+}
+
+
+bool Frame::RecoverPoseWithPnpSolver(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, cv::Mat &R, cv::Mat &t) {
+	cv::Mat Rvec(3, 1, CV_32F);
+	PnpSolver solver;
+	solver.Solve(points2, points3, Rvec, t);
+	cv::Rodrigues(Rvec, R);
+//	std::cout << "[Frame::RecoverPoseWithPnpSolver] R: " << R << std::endl << "t: " << t << std::endl;
+#ifdef USE_PROJECT_ERROR
+	std::vector<cv::Point2f> pro_points;
+	cv::projectPoints(points3, Rvec, t, Common::K, cv::Mat(), pro_points);
+	float pro_error = 0;
+	for (size_t i = 0; i < points2.size(); ++i) {
+		cv::Point2f error = points2[i] - pro_points[i];
+		pro_error += (fabs(error.x) + fabs(error.y));
+	}
+	std::cout << "[Frame::RecoverPoseWithPnpSolver] pro_error: " << pro_error / points2.size() << std::endl;
+#endif
 	return true;
 }
 

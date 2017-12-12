@@ -43,9 +43,13 @@ namespace VISG {
 		int valid_count = cv::countNonZero(mask);
 		if (valid_count < 10 || static_cast<double>(valid_count) / corners.size() < 0.6)
 			return false;
+
+	
 		cv::Rodrigues(Rvec, cvR);
 		Eigen::Matrix3f tmp_R = Rcv2Eigen(cvR);
 		Eigen::Vector3f tmp_t = Tcv2Eigen(tvec);
+		PnpSolver solver;
+		solver.Solve(corners, points3_, Rvec, tvec);
 		if (is_first_frame_) {
 			R0_ = tmp_R;
 			t0_ = tmp_t;

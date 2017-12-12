@@ -45,6 +45,7 @@ private:
 		MyMatches &inliers_matches,cv::Mat &R,cv::Mat &t);
 	bool RecoverPose(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, const MyMatches &matches,
 		MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t);
+	bool RecoverPoseWithPnpSolver(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, cv::Mat &R, cv::Mat &t);
 	Feature::Ptr p_orb_left_;
 	Feature::Ptr p_orb_right_;
 

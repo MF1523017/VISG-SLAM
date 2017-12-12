@@ -83,7 +83,7 @@ void DrawBoard::DrawCorner(cv::Mat &img,const cv::Size &pattern_size,const std::
 void DrawBoard::DrawProjectError(cv::Mat &img, const KeyPoints &key_points, const MyMatches &matches, const std::vector<cv::Point2f> &pro_points) {
 	for (size_t i = 0; i < matches.size(); ++i) {
 		size_t trainIdx = matches[i].second;
-		cv::circle(img, pro_points[i], 4, cv::Scalar(0, 0, 255));
+		cv::circle(img, pro_points[i], 4, cv::Scalar(255, 0, 0));
 		cv::line(img, key_points[trainIdx].pt, pro_points[i], cv::Scalar(255, 0, 0),2);
 	}
 }
