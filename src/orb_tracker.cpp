@@ -41,7 +41,7 @@ namespace VISG {
 #ifdef USE_PROJECT_ERROR
 			std::vector<cv::Point2f> pro_points;
 			float e = Optimizer::ProjectPointsStereoMatch(p_frame_cur_->map_points, 
-				p_frame_cur_->match_points, p_frame_cur_->inliers, p_frame_cur_->wRc, p_frame_cur_->wtc, pro_points);
+				p_frame_cur_->match_points, p_frame_cur_->inliers, p_frame_cur_->rRc, p_frame_cur_->rtc, pro_points);
 			std::cout << "[OrbTracker::Init] project error: " << e << std::endl;
 #endif
 		//	DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points, false);
@@ -64,7 +64,7 @@ namespace VISG {
 #ifdef USE_PROJECT_ERROR
 		std::vector<cv::Point2f> pro_points;
 		float e = Optimizer::ProjectPointsRefTrack2D3D(p_frame_ref_->map_points,
-			p_frame_cur_->left_key_points, my_matches, p_frame_cur_->wRc, p_frame_cur_->wtc, pro_points);
+			p_frame_cur_->left_key_points, my_matches, p_frame_cur_->rRc, p_frame_cur_->rtc, pro_points);
 		std::cout << "[OrbTracker Track] Project error: " << e << std::endl;
 		DrawBoard::handle().DrawProjectError(left, p_frame_cur_->left_key_points, my_matches, pro_points);
 #endif
@@ -72,11 +72,14 @@ namespace VISG {
 		DrawBoard::handle().DrawPose(left, p_frame_cur_->wRc, p_frame_cur_->wtc, ret);
 		DrawBoard::handle().DrawMatch(ref_image, left, my_matches, p_frame_ref_->left_key_points, p_frame_cur_->left_key_points, false);
 #endif	
-		if (ret && p_frame_cur_->IsKeyFrame(my_matches)) {
-			p_frame_cur_->StereoMatch();
-			p_frame_ref_.swap(p_frame_cur_);// = p_frame_cur_;
-			ref_image = left.clone();
-		}
+		//if (ret && p_frame_cur_->IsKeyFrame(my_matches)) {
+		//	p_frame_cur_->StereoMatch();
+		//	p_frame_ref_.swap(p_frame_cur_);// = p_frame_cur_;
+		//	ref_image = left.clone();
+		//}
+		p_frame_cur_->StereoMatch();
+		p_frame_ref_.swap(p_frame_cur_);// = p_frame_cur_;
+		ref_image = left.clone();
 	//	std::cout << "[OrbTracker Track] p_frame_ref_ status: after " << p_frame_ref_.use_count() << std::endl;
 		return true;
 	}

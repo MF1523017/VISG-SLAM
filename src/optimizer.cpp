@@ -64,7 +64,7 @@ namespace VISG {
 		const Eigen::Matrix3f &R, const Eigen::Vector3f &t,
 		std::vector<cv::Point2f> &pro_points) {
 
-		if (map_points.empty())
+		if (matches.empty())
 			return -1;
 		pro_points.clear();
 		pro_points.reserve(map_points.size());
@@ -96,6 +96,7 @@ namespace VISG {
 			std::cout << pose[i] << " ";
 		}
 		std::cout << std::endl;
+		ceres::LossFunction* loss_function = new ceres::HuberLoss(4);
 		double *p3d = new double[3 * points3.size()];
 		for (size_t i = 0; i < points2.size(); ++i) {
 			p3d[3*i] = static_cast<double>(points3[i].x);
@@ -103,14 +104,15 @@ namespace VISG {
 			p3d[3*i+2] = static_cast<double>(points3[i].z);
 			ceres::CostFunction *cost_function = ProjectionError::Create(static_cast<double>(points2[i].x),
 																		static_cast<double>(points2[i].y));
-			problem_.AddResidualBlock(cost_function, nullptr, pose, p3d+3*i);
+			
+			problem_.AddResidualBlock(cost_function, loss_function, pose, p3d+3*i);
 		}
 		ceres::Solver::Options options;
 		options.linear_solver_type = ceres::DENSE_SCHUR;
 		options.minimizer_progress_to_stdout = true;
 		ceres::Solver::Summary summary;
 		ceres::Solve(options, &problem_, &summary);
-		std::cout << summary.FullReport() << std::endl;
+		//std::cout << summary.FullReport() << std::endl;
 
 		std::cout << std::endl << "[PnpSolver::Solve] pose after:";
 		for (size_t i = 0; i < 6; ++i) {

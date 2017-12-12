@@ -10,6 +10,7 @@ void Frame::SetPose(const Eigen::Matrix3f &R, const Eigen::Vector3f &t) {
 	wRc = R;
 	wtc = t;
 	wTc = HPose(R, t);
+
 }
 void Frame::ExtractFeatures(const cv::Mat&left, const cv::Mat&right) {
 	std::thread thread_left(&Frame::ExtractORB, this, left, true);
@@ -134,7 +135,8 @@ size_t Frame::StereoMatch() {
 			const float x = (lp.x - Common::Cx)*z*Common::FxInv;
 			const float y = (lp.y - Common::Cy)*z*Common::FyInv;
 			Eigen::Vector3f p3Dc(x, y, z);
-			map_points[i] = wRc * p3Dc + wtc;
+			//map_points[i] = wRc * p3Dc + wtc;
+			map_points[i] = p3Dc;
 			inliers[i] = true;
 			++matches_counter;
 		}
@@ -178,10 +180,11 @@ bool Frame::RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 	 
 	Eigen::Matrix3f cRr = Rcv2Eigen(R);//ref to cur
 	Eigen::Vector3f ctr = Tcv2Eigen(t);
-	Eigen::Matrix4f cTr = HPose(cRr, ctr);
+	Eigen::Matrix4f rTc = HPose(cRr, ctr).inverse();
 	Eigen::Matrix4f wTr = p_frame_ref->wTc;
-	wTc = wTr * (cTr.inverse());
+	wTc = wTr * rTc;
 	HPose2Rt(wTc, wRc, wtc);
+	HPose2Rt(rTc, rRc, rtc);
 	return true;
 }
 
@@ -243,12 +246,13 @@ bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 
 	ret = RecoverPoseWithPnpSolver(points2, points3, R, t);
 	std::swap(inliers_matches, matches1);
-	Eigen::Matrix3f cRw = Rcv2Eigen(R);//world to cur
-	Eigen::Vector3f ctw = Tcv2Eigen(t);
-	Eigen::Matrix4f cTw = HPose(cRw, ctw);
-	wTc = cTw.inverse();
+	Eigen::Matrix3f cRr = Rcv2Eigen(R);//ref to cur
+	Eigen::Vector3f ctr = Tcv2Eigen(t);
+	Eigen::Matrix4f rTc = HPose(cRr, ctr).inverse();
+	Eigen::Matrix4f wTr = p_frame_ref->wTc;
+	wTc = wTr * rTc;
 	HPose2Rt(wTc, wRc, wtc);
-
+	HPose2Rt(rTc, rRc, rtc);
 	return true;
 }
 
@@ -312,6 +316,7 @@ bool Frame::RecoverPoseWithPnpSolver(const std::vector<cv::Point2f> &points2, co
 #endif
 	return true;
 }
+
 
 void Frame::Reset() {
 	match_points.clear();//clear old match_points;

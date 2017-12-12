@@ -28,7 +28,7 @@ namespace VISG {
 				cv::cvtColor(left_, left, CV_RGBA2GRAY);
 				cv::cvtColor(right_, right, CV_RGBA2GRAY);
 				(*tracker_)(left, right);
-				//std::cout << "fps: " << zed_.GetFPS() << std::endl;
+				std::cout << "fps: " << zed_.GetFPS() << std::endl;
 				if (cv::waitKey(10) == 27)
 					break;
 			}

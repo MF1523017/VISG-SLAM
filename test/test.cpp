@@ -81,8 +81,11 @@ void test_VisgSlamOffline(char **argv){
 void test_offline() {
 	VisgSlamOffline visg;
 	std::vector<std::string> images;
-	//const std::string data_dir("H:\\dataset\\20171207_chessboard\\20171207");
+#ifdef USE_CHESSBOARD
+	const std::string data_dir("H:\\dataset\\20171207_chessboard\\20171207");
+#else
 	const std::string data_dir("H:\\dataset\\20171207_demo\\20171207");
+#endif
 	loadImage(data_dir, images);
 	for (size_t i = 0; i < images.size(); ++i) {
 		const std::string left_image(data_dir + "\\cam0\\data\\" + images[i]);

@@ -4,7 +4,7 @@
 
 int main(int argc, char **argv) {
 //	test_Camera()
-#if 1
+#if 0
 	if (argc == 1)
 		test_VisgSlam();
 	else if (argc == 2) {

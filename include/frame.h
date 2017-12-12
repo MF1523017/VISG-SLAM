@@ -15,6 +15,8 @@ public:
 			0,1,0,0,
 			0,0,1,0,
 			0,0,0,1;
+		rRc = wRc;
+		rtc = wtc;
 	}
 	void SetPose(const Eigen::Matrix3f &R, const Eigen::Vector3f &t);
 	void ExtractFeatures(const cv::Mat&left, const cv::Mat&right);
@@ -33,8 +35,10 @@ public:
 	MapPoints map_points;
 	//cv::Mat wRc;//camera to world;
 	//cv::Mat wTc;
-	Eigen::Matrix3f wRc;//rotation
+	Eigen::Matrix3f wRc;//rotation camera to world frame
 	Eigen::Vector3f wtc;//translation
+	Eigen::Matrix3f rRc;// camera to reference frame
+	Eigen::Vector3f rtc;
 	Eigen::Matrix4f wTc;// pose
 	std::vector<bool> inliers;
 private:

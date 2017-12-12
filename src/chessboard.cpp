@@ -33,9 +33,10 @@ namespace VISG {
 		cv::drawChessboardCorners(gray, pattern_size_, corners, patternfound);
 		cv::imshow("chessboard corners", gray);
 		cv::waitKey();*/
-		cv::Mat Rvec,tvec,cvR,mask;
+		cv::Mat Rvec(3,1,CV_32F),tvec(3,1,CV_32F),cvR(3,3,CV_32F),mask;
+		bool ret = true;
 		//R t: brings points from the model coordinate system to the camera coordinate system
-		bool ret = cv::solvePnPRansac(points3_, corners, camera_matrix, cv::Mat(), Rvec, tvec, true, 100, 8, 0.99, mask);
+		 ret = cv::solvePnPRansac(points3_, corners, camera_matrix, cv::Mat(), Rvec, tvec, true, 100, 8, 0.99, mask);
 		if (!ret) {
 			std::cout << "[Chessboard::GetPose] pnp error" << std::endl;
 			return false;
@@ -44,12 +45,12 @@ namespace VISG {
 		if (valid_count < 10 || static_cast<double>(valid_count) / corners.size() < 0.6)
 			return false;
 
-	
+	//	PnpSolver solver;
+//		solver.Solve(corners, points3_, Rvec, tvec);
 		cv::Rodrigues(Rvec, cvR);
 		Eigen::Matrix3f tmp_R = Rcv2Eigen(cvR);
 		Eigen::Vector3f tmp_t = Tcv2Eigen(tvec);
-		PnpSolver solver;
-		solver.Solve(corners, points3_, Rvec, tvec);
+		
 		if (is_first_frame_) {
 			R0_ = tmp_R;
 			t0_ = tmp_t;
