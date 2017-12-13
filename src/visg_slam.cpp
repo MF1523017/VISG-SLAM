@@ -2,7 +2,7 @@
 #include "draw_board.h"
 namespace VISG {
 	VisgSlam::VisgSlam():tracker_(new OrbTracker) {
-		zed_.Open();
+		zed_.Open(3,100);
 		Common::Height = zed_.cam_info.left_cam.image_size.height;
 		Common::Width = zed_.cam_info.left_cam.image_size.width;
 		Common::Fx = zed_.cam_info.left_cam.fx;
@@ -25,9 +25,10 @@ namespace VISG {
 			// Grab an image
 			if (zed_.Grab(left_, right_)) {
 				//cv::imwrite("1.png", left_);
-				cv::cvtColor(left_, left, CV_RGBA2GRAY);
+				/*cv::cvtColor(left_, left, CV_RGBA2GRAY);
 				cv::cvtColor(right_, right, CV_RGBA2GRAY);
-				(*tracker_)(left, right);
+				(*tracker_)(left, right);*/
+				(*tracker_)(left_, right_);
 				std::cout << "fps: " << zed_.GetFPS() << std::endl;
 				if (cv::waitKey(10) == 27)
 					break;
@@ -118,6 +119,6 @@ namespace VISG {
 		tracker_->GetPose(R, t);
 		//std::cout << "[VisgSlamOffline Run] t error: " << (t_truth - t).transpose() << std::endl;
 #endif
-		cv::waitKey(50);
+		cv::waitKey(1);
 	}
 }

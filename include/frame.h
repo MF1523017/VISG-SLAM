@@ -26,7 +26,7 @@ public:
 	bool RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches&inliers_matches);
 	bool RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches);
 	bool IsKeyFrame(MyMatches &matches);
-	void GetMapPoints(MapPoints &valid_map_points);
+	void GetwMapPoints(MapPoints &valid_map_points);
 public:
 	
 	cv::Mat left_descriptors, right_descriptors;

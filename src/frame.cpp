@@ -326,12 +326,12 @@ void Frame::Reset() {
 	match_points.resize(Common::FeaturesNum);
 	map_points.resize(Common::FeaturesNum);
 }
-void Frame::GetMapPoints(MapPoints &valid_map_points) {
+void Frame::GetwMapPoints(MapPoints &valid_map_points) {
 	valid_map_points.clear();
 	valid_map_points.reserve(Common::FeaturesNum);
 	for (size_t i = 0; i < inliers.size(); ++i) {
 		if (inliers[i]) {
-			valid_map_points.push_back(map_points[i]);
+			valid_map_points.push_back(wRc * map_points[i] + wtc);;
 		}
 	}
 //	valid_map_points.shrink_to_fit();

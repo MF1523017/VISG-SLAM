@@ -72,9 +72,10 @@ namespace VISG {
 #ifdef DRAW	
 		cv::Mat ar(left.size(), left.type(), cv::Scalar::all(0)),left_ar(left.size(), left.type(), cv::Scalar::all(0));
 		MapPoints map_points;
-		p_frame_ref_->GetMapPoints(map_points);
+		p_frame_ref_->GetwMapPoints(map_points);
 		DrawBoard::handle().DrawAR(ar, map_points, p_frame_cur_->wRc, p_frame_cur_->wtc);
 		DrawBoard::handle().DrawPose(tmp,p_frame_cur_->wRc, p_frame_cur_->wtc, ret);
+		DrawBoard::handle().DrawPose(ar, p_frame_cur_->wRc, p_frame_cur_->wtc, ret);
 		left1 = left + tmp;
 		left_ar = left + ar;
 		DrawBoard::handle().ShowAR(left_ar);

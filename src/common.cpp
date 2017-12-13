@@ -15,4 +15,6 @@ namespace VISG {
 	size_t Common::HistBin = 200;
 	int Common::BestOrbDistance = 80;
 	size_t Common::FeaturesNum = 1000;
+	float Common::ScaleFactor = 1.2;
+	size_t Common::Levels = 4;
 }

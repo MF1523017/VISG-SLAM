@@ -27,6 +27,8 @@ namespace VISG {
 		static size_t HistBin;
 		static int BestOrbDistance;
 		static size_t FeaturesNum;
+		static float ScaleFactor;
+		static size_t Levels;
 	};
 
 }
