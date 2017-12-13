@@ -4,7 +4,7 @@ namespace VISG {
 	VisgSlam::VisgSlam():tracker_(new OrbTracker) {
 		zed_.Open();
 		Common::Height = zed_.cam_info.left_cam.image_size.height;
-		Common::Weight = zed_.cam_info.left_cam.image_size.width;
+		Common::Width = zed_.cam_info.left_cam.image_size.width;
 		Common::Fx = zed_.cam_info.left_cam.fx;
 		Common::Fy = zed_.cam_info.left_cam.fy;
 		Common::Cx = zed_.cam_info.left_cam.cx;
@@ -75,7 +75,7 @@ namespace VISG {
 		
 		// 720 mode
 		Common::Height = 720;
-		Common::Weight = 1280;
+		Common::Width = 1280;
 		Common::Fx = 695.822;
 		Common::Fy = 695.822;
 		Common::Cx = 638.049;
@@ -91,7 +91,7 @@ namespace VISG {
 		// vga mode
 		/*
 		Common::Height = 376;
-		Common::Weight = 672;
+		Common::Width = 672;
 		Common::Fx = 345.766;
 		Common::Fy = 345.766;
 		Common::Cx = 334.065;
@@ -106,9 +106,10 @@ namespace VISG {
 	}
 	void VisgSlamOffline::Run(cv::Mat &left, cv::Mat &right) {
 		cv::Mat left_, right_;
-		cv::cvtColor(left, left_, CV_RGB2GRAY);
+		/*cv::cvtColor(left, left_, CV_RGB2GRAY);
 		cv::cvtColor(left, right_, CV_RGB2GRAY);
-		(*tracker_)(left_, right_);
+		(*tracker_)(left_, right_);*/
+		(*tracker_)(left, right);
 #ifdef USE_CHESSBOARD	
 		Eigen::Matrix3f R_truth,R;
 		Eigen::Vector3f t_truth,t;
@@ -117,6 +118,6 @@ namespace VISG {
 		tracker_->GetPose(R, t);
 		//std::cout << "[VisgSlamOffline Run] t error: " << (t_truth - t).transpose() << std::endl;
 #endif
-		cv::waitKey();
+		cv::waitKey(50);
 	}
 }

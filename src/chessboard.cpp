@@ -68,8 +68,7 @@ namespace VISG {
 		Eigen::Matrix4f c0Tci =  T0_ * ciTw.inverse();
 		//std::cout << "[Chessboard::GetPose] c0Tci: " << c0Tci << std::endl;
 		HPose2Rt(c0Tci, R, t);
-
-		DrawBoard::handle().DrawPose(img, R, t, ret);
+		DrawBoard::handle().DrawPose(img,R, t, ret);
 		DrawBoard::handle().DrawCorner(img, pattern_size_, corners, patternfound);
 		return true;
 	}

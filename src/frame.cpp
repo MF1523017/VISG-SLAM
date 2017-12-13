@@ -34,7 +34,7 @@ void Frame::Match(KeyPoints &left_key_points, const cv::Mat &left_descriptors, K
 	match_points.clear();
 	Hist(left_key_points, left_hist);
 	Hist(right_key_points, right_hist);
-	int pixel_diff = Common::Weight / 10;
+	int pixel_diff = Common::Width / 10;
 	std::cout << "[Frame Match] pixel_diff: " << pixel_diff << std::endl;
 	for (size_t i = 0; i < Common::HistBin; ++i) {
 		if (left_hist[i].empty()|| right_hist[i].empty())
@@ -91,7 +91,7 @@ size_t Frame::StereoMatch() {
 	size_t matches_counter = 0;
 	Reset();
 	// histed right image key points by y
-	int pixel_diff = Common::Weight / 10;
+	int pixel_diff = Common::Width / 10;
 	std::vector<std::vector<size_t>> r_hist(Common::HistBin,std::vector<size_t>());
 	for (size_t i = 0; i < Common::HistBin; ++i) {
 		r_hist[i].reserve(200);
@@ -130,7 +130,7 @@ size_t Frame::StereoMatch() {
 			const float  rx = right_key_points[best_r_idx].pt.x;
 			match_points[i] = Eigen::Vector3f(lp.x, lp.y, rx);
 			float z = Common::BaseLine * Common::Fx / (lp.x - rx);
-			if (z <= 0)
+			if (z <= 0 || z < 0.5 || z >15)
 				continue;
 			const float x = (lp.x - Common::Cx)*z*Common::FxInv;
 			const float y = (lp.y - Common::Cy)*z*Common::FyInv;
@@ -238,8 +238,8 @@ bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 	}
 	cv::Mat R(3,3,CV_32F), t(3,1,CV_32F);
 	bool ret;
-	//ret = RecoverPose(points2, points3, matches1, inliers_matches,R,t);
-	/*if (!ret) {
+	/*ret = RecoverPose(points2, points3, matches1, inliers_matches,R,t);
+	if (!ret) {
 		std::swap(inliers_matches, matches1);
 		return false;
 	}*/
@@ -326,6 +326,15 @@ void Frame::Reset() {
 	match_points.resize(Common::FeaturesNum);
 	map_points.resize(Common::FeaturesNum);
 }
-
+void Frame::GetMapPoints(MapPoints &valid_map_points) {
+	valid_map_points.clear();
+	valid_map_points.reserve(Common::FeaturesNum);
+	for (size_t i = 0; i < inliers.size(); ++i) {
+		if (inliers[i]) {
+			valid_map_points.push_back(map_points[i]);
+		}
+	}
+//	valid_map_points.shrink_to_fit();
+}
 
 }

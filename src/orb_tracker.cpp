@@ -33,7 +33,8 @@ namespace VISG {
 	}
 	bool OrbTracker::Init(cv::Mat &left, cv::Mat &right) {
 		size_t ret = p_frame_cur_->StereoMatch();
-		if (ret > 100) {
+		std::cout << "[OrbTracker::Init] init .....: " << ret << std::endl;
+		if (ret > 60) {
 			std::cout << "[OrbTracker::Init] mathches size: " << ret << std::endl;
 			p_frame_last_ = p_frame_ref_ = p_frame_cur_;
 			ref_image = left.clone();
@@ -44,7 +45,7 @@ namespace VISG {
 				p_frame_cur_->match_points, p_frame_cur_->inliers, p_frame_cur_->rRc, p_frame_cur_->rtc, pro_points);
 			std::cout << "[OrbTracker::Init] project error: " << e << std::endl;
 #endif
-		//	DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points, false);
+		//	DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points);
 			return true;
 		}
 		return false;
@@ -60,23 +61,25 @@ namespace VISG {
 		auto ret = p_frame_cur_->RefTrack2D3D(p_frame_ref_, my_matches);
 		std::cout << "[OrbTracker Track] RefTrack2D3D ret: " << ret << " mathches size: " << my_matches.size() << std::endl;
 
-
+		cv::Mat tmp(left.size(), left.type(),cv::Scalar::all(0)), left1(left.size(),left.type(), cv::Scalar::all(0));
 #ifdef USE_PROJECT_ERROR
 		std::vector<cv::Point2f> pro_points;
 		float e = Optimizer::ProjectPointsRefTrack2D3D(p_frame_ref_->map_points,
 			p_frame_cur_->left_key_points, my_matches, p_frame_cur_->rRc, p_frame_cur_->rtc, pro_points);
 		std::cout << "[OrbTracker Track] Project error: " << e << std::endl;
-		DrawBoard::handle().DrawProjectError(left, p_frame_cur_->left_key_points, my_matches, pro_points);
+		DrawBoard::handle().DrawProjectError(tmp, p_frame_cur_->left_key_points, my_matches, pro_points);
 #endif
 #ifdef DRAW	
-		DrawBoard::handle().DrawPose(left, p_frame_cur_->wRc, p_frame_cur_->wtc, ret);
-		DrawBoard::handle().DrawMatch(ref_image, left, my_matches, p_frame_ref_->left_key_points, p_frame_cur_->left_key_points, false);
+		cv::Mat ar(left.size(), left.type(), cv::Scalar::all(0)),left_ar(left.size(), left.type(), cv::Scalar::all(0));
+		MapPoints map_points;
+		p_frame_ref_->GetMapPoints(map_points);
+		DrawBoard::handle().DrawAR(ar, map_points, p_frame_cur_->wRc, p_frame_cur_->wtc);
+		DrawBoard::handle().DrawPose(tmp,p_frame_cur_->wRc, p_frame_cur_->wtc, ret);
+		left1 = left + tmp;
+		left_ar = left + ar;
+		DrawBoard::handle().ShowAR(left_ar);
+		DrawBoard::handle().DrawMatch(ref_image, left1, my_matches, p_frame_ref_->left_key_points, p_frame_cur_->left_key_points);
 #endif	
-		//if (ret && p_frame_cur_->IsKeyFrame(my_matches)) {
-		//	p_frame_cur_->StereoMatch();
-		//	p_frame_ref_.swap(p_frame_cur_);// = p_frame_cur_;
-		//	ref_image = left.clone();
-		//}
 		p_frame_cur_->StereoMatch();
 		p_frame_ref_.swap(p_frame_cur_);// = p_frame_cur_;
 		ref_image = left.clone();

@@ -1,7 +1,7 @@
 #include "common.h"
 namespace VISG {
 	size_t Common::Height = 0;
-	size_t Common::Weight = 0;
+	size_t Common::Width = 0;
 	float Common::Fx = .0;
 	float Common::Fy = .0;
 	float Common::Cx = .0;

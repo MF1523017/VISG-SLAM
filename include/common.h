@@ -17,7 +17,7 @@ lMr: the right image corr to left image corr
 namespace VISG {
 	struct Common {
 		static size_t Height;
-		static size_t Weight;
+		static size_t Width;
 		static float Fx, Fy, Cx, Cy;
 		static float FxInv, FyInv;
 		static cv::Mat K;

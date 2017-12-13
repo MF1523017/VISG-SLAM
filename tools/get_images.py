@@ -26,5 +26,5 @@ def get_images(file_dir):
             data.write(" \n")
 
 if __name__ == '__main__':
-    file_dir = r'H:\dataset\20171207_demo\20171207\cam1'
+    file_dir = r'H:\dataset\20171120\20171120\cam0'
     get_images(file_dir)
