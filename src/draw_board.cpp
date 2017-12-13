@@ -336,7 +336,6 @@ void DrawBoard::DrawAR(cv::Mat &result, const std::vector<Eigen::Vector3f> &poin
 	//std::cout << "[drawAR] tapFlag: " << tapFlag << " point_inlier size: " << point_inlier.size() << std::endl;
 	if (is_tap && point_inlier.size()>10)
 	{
-
 		Eigen::Matrix3f RIC;
 		RIC << 1, 0, 0,
 			0, 1, 0,

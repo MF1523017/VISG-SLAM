@@ -188,6 +188,7 @@ bool Frame::RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 	return true;
 }
 
+
 bool Frame::RecoverPose(const std::vector<cv::Point2f> &points1, const std::vector<cv::Point2f> &points2, const MyMatches &matches, 
 	MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t) {
 	cv::Mat mask;
@@ -208,7 +209,7 @@ bool Frame::RecoverPose(const std::vector<cv::Point2f> &points1, const std::vect
 	return true;
 }
 
-bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
+bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, std::vector<cv::Point2f> &points2, std::vector<cv::Point3f> &points3) {
 	MyMatches matches, matches1;
 	inliers_matches.clear();
 	// get the init matches
@@ -217,35 +218,70 @@ bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 	std::vector<cv::KeyPoint> & ref_key_points = p_frame_ref->left_key_points;
 	const std::vector<bool> &ref_inliers = p_frame_ref->inliers;
 	const MapPoints &ref_map_points = p_frame_ref->map_points;
-	std::vector<cv::Point2f> points2;
-	std::vector<cv::Point3f> points3;
+	std::vector<cv::Point2f> points_ref;
+	std::vector<cv::Point2f> points_cur;
+	
+	std::vector<cv::Point3f> w_map_points;
 	// apply for memory
 	matches1.reserve(matches.size());
-	points2.reserve(matches.size());
-	points3.reserve(matches.size());
+	points_ref.reserve(matches.size());
+	points_cur.reserve(matches.size());
+	w_map_points.reserve(matches.size());
 	for (size_t i = 0; i < matches.size(); ++i) {
 		const int & queryIdx = matches[i].first;
 		if (!ref_inliers[queryIdx])
 			continue;
 		const int & trainIdx = matches[i].second;
-		points2.push_back(left_key_points[trainIdx].pt);
-		points3.push_back(PEigen2cv(ref_map_points[queryIdx]));
+		points_ref.push_back(left_key_points[trainIdx].pt);
+		points_cur.push_back(ref_key_points[queryIdx].pt);
+		w_map_points.push_back(PEigen2cv(ref_map_points[queryIdx]));
 		matches1.push_back(matches[i]);
 	}
-	if (points2.size() < 3) {
+	if (matches1.size() < 3) {
 		std::cout << "[Frame::RefTrack2D3D] error: points size is too less: " << points2.size() << std::endl;
 		return false;
 	}
-	cv::Mat R(3,3,CV_32F), t(3,1,CV_32F);
+
+	cv::Mat mask;
+	cv::Mat E = cv::findEssentialMat(points_ref, points_cur, Common::K, cv::RANSAC, 0.999, 1.0, mask);
+	if (E.empty())
+		return false;
+	int valid_count = cv::countNonZero(mask);
+	if (valid_count < 10 || static_cast<double>(valid_count) / points_ref.size() < 0.6)
+		return false;
+	inliers_matches.reserve(matches1.size());
+	points2.reserve(matches1.size());
+	points3.reserve(matches1.size());
+	for (size_t i = 0; i < mask.rows; ++i) {
+		int status = mask.at<char>(i, 0);
+		if (status) {
+			inliers_matches.push_back(matches1[i]);
+			points2.push_back(points_ref[i]);
+			points3.push_back(w_map_points[i]);
+		}
+	}
+	return true;
+}
+
+bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
+	std::vector<cv::Point2f> points2;
+	std::vector<cv::Point3f> points3;
 	bool ret;
+	ret = FetchMatchPoints(p_frame_ref, inliers_matches, points2, points3);
+	if (!ret) {
+		std::cout << "[Frame::RefTrack2D3D]: fetch match points error!" << std::endl;
+		return false;
+	}
+	cv::Mat R(3,3,CV_32F), t(3,1,CV_32F);
+	
 	/*ret = RecoverPose(points2, points3, matches1, inliers_matches,R,t);
 	if (!ret) {
 		std::swap(inliers_matches, matches1);
 		return false;
 	}*/
-
+	
 	ret = RecoverPoseWithPnpSolver(points2, points3, R, t);
-	std::swap(inliers_matches, matches1);
+
 	Eigen::Matrix3f cRr = Rcv2Eigen(R);//ref to cur
 	Eigen::Vector3f ctr = Tcv2Eigen(t);
 	Eigen::Matrix4f rTc = HPose(cRr, ctr).inverse();
