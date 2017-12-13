@@ -18,7 +18,7 @@ namespace VISG {
 		t0_.setZero();
 	}
 
-	bool Chessboard::GetPose(cv::Mat &img, const cv::Mat &camera_matrix, Eigen::Matrix3f &R, Eigen::Vector3f &t) {
+	bool Chessboard::GetPose(cv::Mat &img, const cv::Mat &camera_matrix, Eigen::Matrix3f &R, Eigen::Vector3f &t,bool is_showing) {
 		cv::Mat gray;
 		if(img.channels() == 3)
 			cv::cvtColor(img, gray, CV_RGB2GRAY);
@@ -29,10 +29,6 @@ namespace VISG {
 		if (patternfound)
 			cv::cornerSubPix(gray, corners, cv::Size(11, 11), cv::Size(-1, -1),
 				cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
-		/*cv::namedWindow("chessboard corners", 0);
-		cv::drawChessboardCorners(gray, pattern_size_, corners, patternfound);
-		cv::imshow("chessboard corners", gray);
-		cv::waitKey();*/
 		cv::Mat Rvec(3,1,CV_32F),tvec(3,1,CV_32F),cvR(3,3,CV_32F),mask;
 		bool ret = true;
 		//R t: brings points from the model coordinate system to the camera coordinate system
@@ -41,6 +37,15 @@ namespace VISG {
 			std::cout << "[Chessboard::GetPose] pnp error" << std::endl;
 			return false;
 		}
+
+		std::vector<cv::Point2f> pro_points;
+		cv::projectPoints(points3_, Rvec, tvec, Common::K, cv::Mat(), pro_points);
+		float pro_error = 0;
+		for (size_t i = 0; i < corners.size(); ++i) {
+			cv::Point2f error = corners[i] - pro_points[i];
+			pro_error += (fabs(error.x) + fabs(error.y));
+		}
+		std::cout << "[Chessboard::GetPose] pro_error: " << pro_error / corners.size() << std::endl;
 		int valid_count = cv::countNonZero(mask);
 		if (valid_count < 10 || static_cast<double>(valid_count) / corners.size() < 0.6)
 			return false;
@@ -58,18 +63,24 @@ namespace VISG {
 			is_first_frame_ = false;
 			std::cout << "[Chessboard::GetPose] T0_: " << T0_ << std::endl;
 		}
-#ifdef USE_PROJECT_ERROR
-		std::vector<cv::Point2f> pro_points;
-		float e = Optimizer::ProjectPoints(points3_, corners, tmp_R.transpose(), -tmp_R.transpose()*tmp_t, pro_points);
-		std::cout << "[Chessboard::GetPose] project error: " << e << std::endl;
-#endif
+		
 		Eigen::Matrix4f ciTw = HPose(tmp_R, tmp_t);
 		// TODO make sure the transform 
 		Eigen::Matrix4f c0Tci =  T0_ * ciTw.inverse();
-		//std::cout << "[Chessboard::GetPose] c0Tci: " << c0Tci << std::endl;
 		HPose2Rt(c0Tci, R, t);
-		DrawBoard::handle().DrawPose(img,R, t, ret);
-		DrawBoard::handle().DrawCorner(img, pattern_size_, corners, patternfound);
+		if (is_showing) {
+			cv::namedWindow("draw corners", 0);
+			Eigen::Vector3f ypr(R2ypr(R));
+			char text_rotation[128];
+			char text_translation[128];
+			snprintf(text_rotation, 128, "rotation: %3.3f, %3.3f, %3.3f", ypr.x(), ypr.y(), ypr.z());
+			snprintf(text_translation, 128, "translation: %3.3f, %3.3f, %3.3f", t.x(), t.y(), t.z());
+			cv::putText(img, text_rotation, cv::Point2i(100, 20), 0, 0.5, cv::Scalar(255, 0, 255));
+			cv::putText(img, text_translation, cv::Point2i(100, 50), 0, 0.5, cv::Scalar(255, 0, 255));
+			cv::drawChessboardCorners(img, pattern_size_, corners, patternfound);
+			cv::imshow("draw corners", img);
+		}
 		return true;
 	}
+
 }

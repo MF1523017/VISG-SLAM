@@ -1,5 +1,6 @@
 #include "visg_slam.h"
 #include "draw_board.h"
+#define USE_CHESSBOARD
 namespace VISG {
 	VisgSlam::VisgSlam():tracker_(new OrbTracker) {
 		zed_.Open(3,100);
@@ -70,10 +71,7 @@ namespace VISG {
 	}
 
 	VisgSlamOffline::VisgSlamOffline() :tracker_(new OrbTracker) {
-#ifdef USE_CHESSBOARD
-		chess_ = std::make_shared<Chessboard>(7, 6, 0.025);
-#endif
-		
+
 		// 720 mode
 		Common::Height = 720;
 		Common::Width = 1280;
@@ -114,7 +112,7 @@ namespace VISG {
 #ifdef USE_CHESSBOARD	
 		Eigen::Matrix3f R_truth,R;
 		Eigen::Vector3f t_truth,t;
-		auto ret = chess_->GetPose(left, Common::K, R_truth, t_truth);
+		auto ret = Chessboard::handle(7, 6, 0.025)->GetPose(left, Common::K, R_truth, t_truth);
 		//std::cout << "[VisgSlamOffline Run] chess get pose: " << ret << std::endl;
 		tracker_->GetPose(R, t);
 		//std::cout << "[VisgSlamOffline Run] t error: " << (t_truth - t).transpose() << std::endl;

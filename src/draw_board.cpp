@@ -71,11 +71,6 @@ void DrawBoard::DrawPose(cv::Mat &left,const Eigen::Matrix3f & R, const Eigen::V
 	cv::putText(left, test_status, cv::Point2i(100, 80), 0, 0.5, cv::Scalar(255, 0, 255));
 }
 
-void DrawBoard::DrawCorner(cv::Mat &img,const cv::Size &pattern_size,const std::vector<cv::Point2f> & corners,bool patternfound) {
-	cv::drawChessboardCorners(img, pattern_size, corners, patternfound);
-	cv::imshow("black_board", img);
-}
-
 void DrawBoard::DrawProjectError(cv::Mat &img, const KeyPoints &key_points, const MyMatches &matches, const std::vector<cv::Point2f> &pro_points) {
 
 	for (size_t i = 0; i < matches.size(); ++i) {

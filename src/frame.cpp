@@ -17,9 +17,6 @@ void Frame::ExtractFeatures(const cv::Mat&left, const cv::Mat&right) {
 	std::thread thread_right(&Frame::ExtractORB, this, right, false);
 	thread_left.join();
 	thread_right.join();
-	/*std::cout << "left_key_points size: " << left_key_points.size() << 
-		" corrspondence left_descriptors cols : " << left_descriptors.cols << 
-		" left_descriptors rows : "<< left_descriptors.row(0) << std::endl;*/
 }
 void Frame::ExtractORB(const cv::Mat&img, bool is_left) {
 	if (is_left)
@@ -42,14 +39,12 @@ void Frame::Match(KeyPoints &left_key_points, const cv::Mat &left_descriptors, K
 		for (size_t j = 0; j < left_hist[i].size(); ++j) {
 			size_t l_idx = left_hist[i][j];
 			cv::Point2f &lp = left_key_points[l_idx].pt;
-		//	std::cout << "[Frame Match] lp: " << lp << std::endl;
 			int best_dist = 0x7fffffff;
 			int best_r_idx = -1;
 			cv::Point2f match_rp;
 			for (size_t k = 0; k < right_hist[i].size(); ++k) {
 				size_t r_idx = right_hist[i][k];
 				cv::Point2f &rp = right_key_points[r_idx].pt;
-		//		std::cout << "[Frame Match] rp: " << rp << std::endl;
 				if (rp.x + 1 < 1e-3 || lp.x < rp.x || lp.x - rp.x > pixel_diff )
 					continue;
 				cv::Mat &ld = left_descriptors.row(l_idx);
@@ -80,9 +75,7 @@ void Frame::Hist(KeyPoints &key_points, std::vector<std::vector<size_t>> &hist) 
 	hist.resize(Common::HistBin);
 	size_t point_size = key_points.size();
 	for (size_t i = 0; i < point_size; ++i) {
-		//std::cout << "[Frame Hist] y: " << key_points[i].pt.y << std::endl;
 		size_t idx = floor(key_points[i].pt.y / step);
-		//std::cout << "[Frame Hist] idx: " << idx << std::endl;
 		hist[idx].push_back(i);
 	}
 }
@@ -135,7 +128,6 @@ size_t Frame::StereoMatch() {
 			const float x = (lp.x - Common::Cx)*z*Common::FxInv;
 			const float y = (lp.y - Common::Cy)*z*Common::FyInv;
 			Eigen::Vector3f p3Dc(x, y, z);
-			//map_points[i] = wRc * p3Dc + wtc;
 			map_points[i] = p3Dc;
 			inliers[i] = true;
 			++matches_counter;
@@ -214,7 +206,7 @@ bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches,
 	inliers_matches.clear();
 	// get the init matches
 	Matcher::OrbMatch(matches, p_frame_ref->left_descriptors, left_descriptors);
-
+	std::cout << "[Frame::FetchMatchPoints]: orbmatches size: " << matches.size() << std::endl;
 	std::vector<cv::KeyPoint> & ref_key_points = p_frame_ref->left_key_points;
 	const std::vector<bool> &ref_inliers = p_frame_ref->inliers;
 	const MapPoints &ref_map_points = p_frame_ref->map_points;
@@ -238,17 +230,21 @@ bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches,
 		matches1.push_back(matches[i]);
 	}
 	if (matches1.size() < 3) {
-		std::cout << "[Frame::RefTrack2D3D] error: points size is too less: " << points2.size() << std::endl;
+		std::cout << "[Frame::RefTrack2D3D] error: points size is too less: " << matches1.size() << std::endl;
 		return false;
 	}
 
 	cv::Mat mask;
 	cv::Mat E = cv::findEssentialMat(points_ref, points_cur, Common::K, cv::RANSAC, 0.999, 1.0, mask);
-	if (E.empty())
+	if (E.empty()) {
+		std::cout << "[Frame::RefTrack2D3D] error: E is empty: " << std::endl;
 		return false;
+	}
 	int valid_count = cv::countNonZero(mask);
-	if (valid_count < 10 || static_cast<double>(valid_count) / points_ref.size() < 0.6)
+	if (valid_count < 10 || static_cast<double>(valid_count) / points_ref.size() < 0.6) {
+		std::cout << "[Frame::RefTrack2D3D] error: valid_count : " << valid_count << std::endl;
 		return false;
+	}
 	inliers_matches.reserve(matches1.size());
 	points2.reserve(matches1.size());
 	points3.reserve(matches1.size());
@@ -300,7 +296,6 @@ bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vect
 	}
 	cv::Mat Rvec(3,1,CV_32F),mask;
 	// R t: brings points from the model coordinate system to the camera coordinate system
-	// bool ret = cv::solvePnP(points3,points2,cam.K(),cv::Mat(),Rvec,t_,false,cv::SOLVEPNP_ITERATIVE);
 	bool ret = cv::solvePnPRansac(points3, points2, Common::K, cv::Mat(), Rvec, t,true,100,8,0.99,mask);
 	if (!ret) {
 		std::cout << "[Frame::RecoverPose] pnp error" << std::endl;
@@ -370,7 +365,6 @@ void Frame::GetwMapPoints(MapPoints &valid_map_points) {
 			valid_map_points.push_back(wRc * map_points[i] + wtc);;
 		}
 	}
-//	valid_map_points.shrink_to_fit();
 }
 
 }

@@ -11,7 +11,7 @@ lMr: the right image corr to left image corr
 
 #include "type.h"
 
-//#define USE_CHESSBOARD
+
 #define USE_PROJECT_ERROR
 #define DRAW
 namespace VISG {

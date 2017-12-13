@@ -21,9 +21,6 @@ public:
 	void Run(cv::Mat &left, cv::Mat &right);
 	
 private:
-#ifdef USE_CHESSBOARD
-	Chessboard::Ptr chess_;
-#endif
 	TrackerInterface::Ptr tracker_;
 };
 }

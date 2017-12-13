@@ -45,7 +45,8 @@ namespace VISG {
 				p_frame_cur_->match_points, p_frame_cur_->inliers, p_frame_cur_->rRc, p_frame_cur_->rtc, pro_points);
 			std::cout << "[OrbTracker::Init] project error: " << e << std::endl;
 #endif
-		//	DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points);
+
+			DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points);
 			return true;
 		}
 		return false;

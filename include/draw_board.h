@@ -31,7 +31,6 @@ public:
 	void DrawMatch(cv::Mat &left, cv::Mat &right, MatchPoints &match_points);
 	void DrawMatch(cv::Mat &left, cv::Mat &right, MyMatches &my_matches, const KeyPoints& key_points1, const KeyPoints& key_points2);
 	void DrawPose(cv::Mat &left, const Eigen::Matrix3f & R, const Eigen::Vector3f &t,bool status);
-	void DrawCorner(cv::Mat &img, const cv::Size &pattern_size, const std::vector<cv::Point2f> & corners, bool patternfound);
 	void DrawProjectError(cv::Mat &img, const KeyPoints &key_points,const MyMatches &matches,const std::vector<cv::Point2f> &pro_points);
 	void DrawAR(cv::Mat &result,const std::vector<Eigen::Vector3f> &point_cloud, const Eigen::Matrix3f wRc,const Eigen::Vector3f &wtc);
 	void ShowBlackBoard(cv::Mat &img) {
