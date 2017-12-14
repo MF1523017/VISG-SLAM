@@ -122,13 +122,14 @@ size_t Frame::StereoMatch() {
 		if (best_dist < Common::BestOrbDistance) {
 			const float  rx = right_key_points[best_r_idx].pt.x;
 			match_points[i] = Eigen::Vector3f(lp.x, lp.y, rx);
-			float z = Common::BaseLine * Common::Fx / (lp.x - rx);
+			double z = Common::BaseLine * Common::Fx / (lp.x - rx);
 			if (z <= 0 || z < 0.5 || z >15)
 				continue;
-			const float x = (lp.x - Common::Cx)*z*Common::FxInv;
-			const float y = (lp.y - Common::Cy)*z*Common::FyInv;
-			Eigen::Vector3f p3Dc(x, y, z);
-			map_points[i] = p3Dc;
+			const double x = (lp.x - Common::Cx)*z*Common::FxInv;
+			const double y = (lp.y - Common::Cy)*z*Common::FyInv;
+			//Eigen::Vector3f p3Dc(x, y, z);
+			map_points[i] = std::make_shared<MapPoint>(x,y,z);
+			
 			inliers[i] = true;
 			++matches_counter;
 		}
@@ -140,9 +141,10 @@ bool Frame::RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 	std::vector<cv::Point2f> points21;
 	std::vector<cv::Point2f> points22;
 	std::vector<cv::Point3f> points3;
+	std::vector<MapPoint::Ptr> mp_p3ds;
 	bool ret;
 	MyMatches matches1;
-	ret = FetchMatchPoints(p_frame_ref, matches1, points21, points22, points3);
+	ret = FetchMatchPoints(p_frame_ref, matches1, points21, points22, points3, mp_p3ds);
 	if (!ret) {
 		std::cout << "[Frame::RefTrack2D3D]: fetch match points error!" << std::endl;
 		return false;
@@ -185,7 +187,8 @@ bool Frame::RecoverPose(const std::vector<cv::Point2f> &points1, const std::vect
 	return true;
 }
 
-bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, std::vector<cv::Point2f> &points21, std::vector<cv::Point2f> &points22, std::vector<cv::Point3f> &points3) {
+bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, std::vector<cv::Point2f> &points21, 
+	std::vector<cv::Point2f> &points22, std::vector<cv::Point3f> &points3, std::vector<MapPoint::Ptr> &map_p3ds) {
 	MyMatches matches, matches1;
 	inliers_matches.clear();
 	// get the init matches
@@ -193,23 +196,22 @@ bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches,
 	std::cout << "[Frame::FetchMatchPoints]: orbmatches size: " << matches.size() << std::endl;
 	std::vector<cv::KeyPoint> & ref_key_points = p_frame_ref->left_key_points;
 	const std::vector<bool> &ref_inliers = p_frame_ref->inliers;
-	const MapPoints &ref_map_points = p_frame_ref->map_points;
+	const std::vector<MapPoint::Ptr> &ref_map_points = p_frame_ref->map_points;
 	std::vector<cv::Point2f> points_ref; // ref is prev frame
 	std::vector<cv::Point2f> points_cur;
-	
-	std::vector<cv::Point3f> w_map_points;
+
 	// apply for memory
 	matches1.reserve(matches.size());
 	points_ref.reserve(matches.size());
 	points_cur.reserve(matches.size());
-	w_map_points.reserve(matches.size());
+
 	for (size_t i = 0; i < matches.size(); ++i) {
 		const int & queryIdx = matches[i].first;
 		if (!ref_inliers[queryIdx])
 			continue;
 		const int & trainIdx = matches[i].second;
 		points_ref.push_back(ref_key_points[queryIdx].pt);
-		w_map_points.push_back(PEigen2cv(ref_map_points[queryIdx]));
+		
 		points_cur.push_back(left_key_points[trainIdx].pt);
 		matches1.push_back(matches[i]);
 	}
@@ -233,13 +235,15 @@ bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches,
 	points21.reserve(matches1.size());
 	points22.reserve(matches1.size());
 	points3.reserve(matches1.size());
+	map_p3ds.reserve(matches1.size());
 	for (size_t i = 0; i < mask.rows; ++i) {
 		int status = mask.at<char>(i, 0);
 		if (status) {
 			inliers_matches.push_back(matches1[i]);
 			points21.push_back(points_ref[i]);
 			points22.push_back(points_cur[i]);
-			points3.push_back(w_map_points[i]);
+			points3.push_back(Pdouble2cv(ref_map_points[matches1[i].first]->point));
+			map_p3ds.push_back(ref_map_points[matches1[i].first]);
 		}
 	}
 	return true;
@@ -249,8 +253,9 @@ bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 	std::vector<cv::Point2f> points21;
 	std::vector<cv::Point2f> points22;
 	std::vector<cv::Point3f> points3;
+	std::vector<MapPoint::Ptr> mp_p3ds;
 	bool ret;
-	ret = FetchMatchPoints(p_frame_ref, inliers_matches, points21, points22, points3);
+	ret = FetchMatchPoints(p_frame_ref, inliers_matches, points21, points22, points3, mp_p3ds);
 	if (!ret) {
 		std::cout << "[Frame::RefTrack2D3D]: fetch match points error!" << std::endl;
 		return false;
@@ -263,7 +268,7 @@ bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 		return false;
 	}*/
 	
-	ret = RecoverPoseWithPnpSolver(points22, points3, R, t);
+	ret = RecoverPoseWithPnpSolver(points22, points3, mp_p3ds, R, t);
 
 	Eigen::Matrix3f cRr = Rcv2Eigen(R);//ref to cur
 	Eigen::Vector3f ctr = Tcv2Eigen(t);
@@ -305,10 +310,11 @@ bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vect
 }
 
 
-bool Frame::RecoverPoseWithPnpSolver(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, cv::Mat &R, cv::Mat &t) {
+bool Frame::RecoverPoseWithPnpSolver(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3,
+	const std::vector<MapPoint::Ptr> &mp_p3ds, cv::Mat &R, cv::Mat &t) {
 	cv::Mat Rvec(3, 1, CV_32F);
-	PnpSolver solver;
-	solver.Solve(points2, points3, Rvec, t);
+	PnpSolver pnp_solver;
+	pnp_solver.Solve(points2, mp_p3ds, Rvec, t);
 	cv::Rodrigues(Rvec, R);
 //	std::cout << "[Frame::RecoverPoseWithPnpSolver] R: " << R << std::endl << "t: " << t << std::endl;
 #ifdef USE_PROJECT_ERROR
@@ -331,14 +337,15 @@ void Frame::Reset() {
 	inliers.clear();
 	inliers.resize(Common::FeaturesNum, false);
 	match_points.resize(Common::FeaturesNum);
-	map_points.resize(Common::FeaturesNum);
+	//map_points.resize(Common::FeaturesNum);
+	map_points.resize(Common::FeaturesNum, nullptr);
 }
-void Frame::GetwMapPoints(MapPoints &valid_map_points) {
+void Frame::GetwMapPoints(std::vector<Eigen::Vector3f> &valid_map_points) {
 	valid_map_points.clear();
 	valid_map_points.reserve(Common::FeaturesNum);
 	for (size_t i = 0; i < inliers.size(); ++i) {
 		if (inliers[i]) {
-			valid_map_points.push_back(wRc * map_points[i] + wtc);;
+			valid_map_points.push_back(wRc * (*map_points[i]) + wtc);;
 		}
 	}
 }
@@ -350,6 +357,15 @@ void Frame::MotionTrack(Frame::Ptr p_frame_ref) {
 	Eigen::Matrix4f wTr = p_frame_ref->wTc;
 	wTc = wTr * rTc;
 	HPose2Rt(wTc, wRc, wtc);
+}
+
+
+Frame::~Frame() {
+	left_descriptors.release();
+	right_descriptors.release();
+	left_key_points.clear();
+	right_key_points.clear();
+
 }
 
 }

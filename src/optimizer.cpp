@@ -27,7 +27,7 @@ namespace VISG {
 		return project_error / map_points.size();
 	}
 
-	float Optimizer::ProjectPointsStereoMatch(const MapPoints& map_points,
+	float Optimizer::ProjectPointsStereoMatch(const std::vector<MapPoint::Ptr>& map_points,
 		const MatchPoints &match_points,
 		const std::vector<bool> &inliers,
 		const Eigen::Matrix3f &R, const Eigen::Vector3f &t,
@@ -46,7 +46,7 @@ namespace VISG {
 			if (!inliers[i])
 				continue;
 			
-			Eigen::Vector3f pc = R.transpose() * (map_points[i] - t);
+			Eigen::Vector3f pc = R.transpose() * (*map_points[i] - t);
 			float lu = fx * pc.x() / pc.z() + cx;
 			float lv = fy * pc.y() / pc.z() + cy;
 			float ru = fx * (pc.x() - Common::BaseLine) / pc.z() + cx;
@@ -58,7 +58,7 @@ namespace VISG {
 		return project_error / counter;
 	}
 
-	float Optimizer::ProjectPointsRefTrack2D3D(const MapPoints& map_points, 
+	float Optimizer::ProjectPointsRefTrack2D3D(const std::vector<MapPoint::Ptr>& map_points,
 		const KeyPoints & key_points,
 		const MyMatches &matches,
 		const Eigen::Matrix3f &R, const Eigen::Vector3f &t,
@@ -76,7 +76,7 @@ namespace VISG {
 		for (size_t i = 0; i < matches.size(); ++i) {
 			const size_t queryIdx = matches[i].first;
 			const size_t trainIdx = matches[i].second;
-			Eigen::Vector3f pc = R.transpose() * (map_points[queryIdx] - t);
+			Eigen::Vector3f pc = R.transpose() * (*map_points[queryIdx] - t);
 			if (pc.z() <= 0)
 				continue;
 			float u = fx * pc.x() / pc.z() + cx;
@@ -89,18 +89,18 @@ namespace VISG {
 		return project_error / matches.size();
 	}
 
-	void PnpSolver::Solve(const std::vector<cv::Point2f>&points2, const std::vector<cv::Point3f>&points3, cv::Mat &R, cv::Mat&t) {
+	void PnpSolver::Solve(const std::vector<cv::Point2f>&points2, const std::vector<MapPoint::Ptr>&points3, cv::Mat &R, cv::Mat&t) {
 		double *pose = new double[6]{0};
 		std::cout << std::endl;
 		ceres::LossFunction* loss_function = new ceres::HuberLoss(4);
-		double *p3d = new double[3 * points3.size()];
+		//double *p3d = new double[3 * points3.size()];
 		for (size_t i = 0; i < points2.size(); ++i) {
 		//	std::cout << "[PnpSolver::Solve] point3d: " << points3[i] << std::endl;
-			p3d[3*i] = static_cast<double>(points3[i].x);
+			/*p3d[3*i] = static_cast<double>(points3[i].x);
 			p3d[3*i+1] = static_cast<double>(points3[i].y);
-			p3d[3*i+2] = static_cast<double>(points3[i].z);
+			p3d[3*i+2] = static_cast<double>(points3[i].z);*/
 			ceres::CostFunction *cost_function = ProjectionError::Create(static_cast<double>(points2[i].x),
-																		static_cast<double>(points2[i].y), p3d + 3 * i);
+				static_cast<double>(points2[i].y),points3[i]->point );// p3d + 3 * i);
 			
 			problem_.AddResidualBlock(cost_function, loss_function, pose);
 		}
@@ -123,6 +123,6 @@ namespace VISG {
 		t.at<float>(1, 0) = pose[4];
 		t.at<float>(2, 0) = pose[5];
 		delete[]pose;
-		delete[]p3d;
+		//delete[]p3d;
 	}
 }

@@ -5,7 +5,6 @@
 namespace VISG {
 	using KeyPoints = std::vector<cv::KeyPoint>;
 	using MatchPoints = std::vector<Eigen::Vector3f>;
-	using MapPoints = std::vector<Eigen::Vector3f>;
 	using MyMatches = std::vector<std::pair<int, int>>;
 }
 

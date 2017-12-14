@@ -26,8 +26,9 @@ namespace VISG {
 		static size_t FeaturesNum;
 		static float ScaleFactor;
 		static size_t Levels;
+		static size_t EveryNFrames;
 	};
 
 }
-#endif // ! COMMON_h
+#endif // ! common.h
 

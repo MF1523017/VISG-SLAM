@@ -83,7 +83,7 @@ namespace VISG {
 #endif
 #ifdef DRAW	
 		cv::Mat ar(left.size(), left.type(), cv::Scalar::all(0)),left_ar(left.size(), left.type(), cv::Scalar::all(0));
-		MapPoints map_points;
+		std::vector<Eigen::Vector3f> map_points;
 		p_frame_ref_->GetwMapPoints(map_points);
 		DrawBoard::handle().DrawAR(ar, map_points, p_frame_cur_->wRc, p_frame_cur_->wtc);
 		DrawBoard::handle().DrawPose(tmp,p_frame_cur_->wRc, p_frame_cur_->wtc, ret);
@@ -93,7 +93,7 @@ namespace VISG {
 		DrawBoard::handle().ShowAR(left_ar);
 		DrawBoard::handle().DrawMatch(ref_image, left1, my_matches, p_frame_ref_->left_key_points, p_frame_cur_->left_key_points);
 #endif	
-		if (0 == ((++frame_id_) % 4)) {
+		if (0 == ((++frame_id_) % Common::EveryNFrames)) {
 			p_frame_cur_->StereoMatch();
 			p_frame_ref_ = p_frame_cur_;
 			ref_image = left.clone();

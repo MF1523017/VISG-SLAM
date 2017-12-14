@@ -82,6 +82,9 @@ namespace VISG {
 	cv::Point3f PEigen2cv(const Eigen::Vector3f &p) {
 		return cv::Point3f(p.x(), p.y(), p.z());
 	}
+	cv::Point3f Pdouble2cv(const double *p) {
+		return cv::Point3f(p[0], p[1], p[2]);
+	}
 
 	Eigen::Vector3f R2ypr(const Eigen::Matrix3f &R) {
 		Eigen::Vector3f n = R.col(0);

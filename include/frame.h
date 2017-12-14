@@ -1,6 +1,7 @@
 #ifndef FRAME_H
 #define FRAME_H
 #include "feature.h"
+#include "map_point.h"
 #include <vector>
 namespace VISG {
 class Frame {
@@ -26,15 +27,18 @@ public:
 	bool RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches&inliers_matches);
 	bool RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches);
 	void MotionTrack(Frame::Ptr p_frame_ref);
-	bool FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, std::vector<cv::Point2f> &points21, std::vector<cv::Point2f> &points22,std::vector<cv::Point3f> &points3);
+	bool FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, std::vector<cv::Point2f> &points21, std::vector<cv::Point2f> &points22,
+		std::vector<cv::Point3f> &points3,std::vector<MapPoint::Ptr> &map_p3ds);
 	bool IsKeyFrame(MyMatches &matches);
-	void GetwMapPoints(MapPoints &valid_map_points);
+	void GetwMapPoints(std::vector<Eigen::Vector3f> &valid_map_points);
+	~Frame();
 public:
 	
 	cv::Mat left_descriptors, right_descriptors;
 	KeyPoints left_key_points, right_key_points;
 	MatchPoints match_points;// (ul,vl,ur)
-	MapPoints map_points;
+	//MapPoints map_points;
+	std::vector<MapPoint::Ptr> map_points;
 	//cv::Mat wRc;//camera to world;
 	//cv::Mat wTc;
 	Eigen::Matrix3f wRc;//rotation camera to world frame
@@ -50,7 +54,8 @@ private:
 	bool RecoverPose(const std::vector<cv::Point2f> &points1, const std::vector<cv::Point2f> &points2, const MyMatches &matches,
 		MyMatches &inliers_matches,cv::Mat &R,cv::Mat &t);
 	bool RecoverPose(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, cv::Mat &R, cv::Mat &t);
-	bool RecoverPoseWithPnpSolver(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, cv::Mat &R, cv::Mat &t);
+	bool RecoverPoseWithPnpSolver(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, 
+		const std::vector<MapPoint::Ptr> &mp_p3ds,cv::Mat &R, cv::Mat &t);
 	Feature::Ptr p_orb_left_;
 	Feature::Ptr p_orb_right_;
 
