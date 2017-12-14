@@ -343,4 +343,13 @@ void Frame::GetwMapPoints(MapPoints &valid_map_points) {
 	}
 }
 
+void Frame::MotionTrack(Frame::Ptr p_frame_ref) {
+	rRc = p_frame_ref->rRc;
+	rtc = p_frame_ref->rtc;
+	Eigen::Matrix4f rTc = HPose(rRc, rtc);
+	Eigen::Matrix4f wTr = p_frame_ref->wTc;
+	wTc = wTr * rTc;
+	HPose2Rt(wTc, wRc, wtc);
+}
+
 }

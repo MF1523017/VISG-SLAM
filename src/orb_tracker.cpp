@@ -3,9 +3,10 @@
 #include "utils.hpp"
 #include "optimizer.h"
 namespace VISG {
-	OrbTracker::OrbTracker() :TrackerInterface(),p_frame_cur_(new Frame), p_frame_last_(new Frame), p_frame_ref_(new Frame) {
-		;
+	OrbTracker::OrbTracker() :TrackerInterface(),p_frame_cur_(nullptr), p_frame_last_(nullptr), 
+		p_frame_ref_(nullptr), motion_counter_(0), frame_id_(0){
 	}
+
 	void OrbTracker::operator()(cv::Mat &left, cv::Mat &right) {
 		p_frame_cur_ = std::make_shared<Frame>();
 		p_frame_cur_->ExtractFeatures(left, right);
@@ -14,7 +15,6 @@ namespace VISG {
 		switch (state_)
 		{
 		case VISG::TrackerInterface::INIT:
-
 			if(Init(left,right))
 				state_ = TRACKING;
 			break;
@@ -29,8 +29,9 @@ namespace VISG {
 		}
 		/*std::cout << "current frame key_points 0: " << p_frame_cur_->left_key_points[0].pt <<
 			" last frame key_points 0: " << p_frame_last_->left_key_points[0].pt << std::endl;*/
-		p_frame_last_ = p_frame_cur_;
+		
 	}
+
 	bool OrbTracker::Init(cv::Mat &left, cv::Mat &right) {
 		size_t ret = p_frame_cur_->StereoMatch();
 		std::cout << "[OrbTracker::Init] init .....: " << ret << std::endl;
@@ -51,6 +52,7 @@ namespace VISG {
 		}
 		return false;
 	}
+
 	bool OrbTracker::Track(cv::Mat &left, cv::Mat &right){
 		// TODO not defined
 	//	std::cout << "[OrbTracker Track] p_frame_ref_ status: before " << p_frame_ref_.use_count() << std::endl;
@@ -59,8 +61,17 @@ namespace VISG {
 		/*auto ret = p_frame_cur_->RefTrack2D2D(p_frame_ref_, my_matches);
 		std::cout << "[OrbTracker Track] RefTrack2D2D ret: " << ret << " mathches size: " << my_matches.size() << std::endl;*/
 		// recover pose using 2d to 3d corrspondence
-		auto ret = p_frame_cur_->RefTrack2D3D(p_frame_ref_, my_matches);
-		std::cout << "[OrbTracker Track] RefTrack2D3D ret: " << ret << " mathches size: " << my_matches.size() << std::endl;
+		bool ret;
+		ret = p_frame_cur_->RefTrack2D3D(p_frame_ref_, my_matches);
+		if (!ret) {
+			p_frame_cur_->MotionTrack(p_frame_last_);
+			std::cout << "[OrbTracker Track] MotionTrack matches size: " << my_matches.size() << std::endl;
+			//cv::waitKey();
+			if (30 == ++motion_counter_){
+				state_ = LOST;
+			}
+		}
+		p_frame_last_ = p_frame_cur_;
 
 		cv::Mat tmp(left.size(), left.type(),cv::Scalar::all(0)), left1(left.size(),left.type(), cv::Scalar::all(0));
 #ifdef USE_PROJECT_ERROR
@@ -82,20 +93,28 @@ namespace VISG {
 		DrawBoard::handle().ShowAR(left_ar);
 		DrawBoard::handle().DrawMatch(ref_image, left1, my_matches, p_frame_ref_->left_key_points, p_frame_cur_->left_key_points);
 #endif	
-		p_frame_cur_->StereoMatch();
-		p_frame_ref_.swap(p_frame_cur_);// = p_frame_cur_;
-		ref_image = left.clone();
+		if (0 == ((++frame_id_) % 4)) {
+			p_frame_cur_->StereoMatch();
+			p_frame_ref_ = p_frame_cur_;
+			ref_image = left.clone();
+		}
 	//	std::cout << "[OrbTracker Track] p_frame_ref_ status: after " << p_frame_ref_.use_count() << std::endl;
+		motion_counter_ = 0;
 		return true;
 	}
+
 	std::vector<cv::Point3f> OrbTracker::GetMapPoints()const {
 		// TODO not defined
 		return std::vector<cv::Point3f>();
 	}
+
 	void OrbTracker::Reboot() {
-		// TODO not defined
-		;
+		p_frame_cur_ = p_frame_last_ = p_frame_ref_ = nullptr;
+		motion_counter_ = 0;
+		key_frames_.clear();
+		ref_image.release();
 	}
+
 	int OrbTracker::GetPose(Eigen::Matrix3f& R, Eigen::Vector3f &t) const {
 		// TODO not defined
 		R = p_frame_cur_->wRc;

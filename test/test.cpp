@@ -32,7 +32,6 @@ void test_Camera(){
 		}
 	}
 	zed.Close();
-	system("pause");
 }
 
 void test_VisgSlam() {

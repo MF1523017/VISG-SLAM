@@ -19,7 +19,9 @@ private:
 	Frame::Ptr p_frame_last_;
 	Frame::Ptr p_frame_ref_;
 	cv::Mat ref_image;
-	std::vector<KeyFrame::Ptr> key_frames;
+	std::vector<KeyFrame::Ptr> key_frames_;
+	size_t motion_counter_;
+	size_t frame_id_;
 };
 }
 #endif // orb_tracker.h

@@ -117,6 +117,6 @@ namespace VISG {
 		tracker_->GetPose(R, t);
 		//std::cout << "[VisgSlamOffline Run] t error: " << (t_truth - t).transpose() << std::endl;
 #endif
-		cv::waitKey(1);
+		cv::waitKey(5);
 	}
 }
