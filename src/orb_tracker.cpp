@@ -5,10 +5,11 @@
 namespace VISG {
 	OrbTracker::OrbTracker() :TrackerInterface(),p_frame_cur_(nullptr), p_frame_last_(nullptr), 
 		p_frame_ref_(nullptr), motion_counter_(0), frame_id_(0){
+		local_frames_.resize(Common::EveryNFrames,nullptr);
 	}
 
 	void OrbTracker::operator()(cv::Mat &left, cv::Mat &right) {
-		p_frame_cur_ = std::make_shared<Frame>();
+		p_frame_cur_ = std::make_shared<Frame>(frame_id_);
 		p_frame_cur_->ExtractFeatures(left, right);
 	//	DrawBoard::handle().DrawFeatures(right, p_frame_cur_->right_key_points, false);
 		// TODO ,
@@ -39,6 +40,7 @@ namespace VISG {
 			std::cout << "[OrbTracker::Init] mathches size: " << ret << std::endl;
 			p_frame_last_ = p_frame_ref_ = p_frame_cur_;
 			ref_image = left.clone();
+			++frame_id_;
 			std::cout << "[OrbTracker::Init] init sucessful! " << std::endl;
 #ifdef USE_PROJECT_ERROR
 			std::vector<cv::Point2f> pro_points;
@@ -72,7 +74,9 @@ namespace VISG {
 			}
 		}
 		p_frame_last_ = p_frame_cur_;
-
+		const size_t diff_id = p_frame_cur_->id() - p_frame_ref_->id()-1;
+		local_frames_[diff_id] = p_frame_cur_;
+		motion_counter_ = 0;
 		cv::Mat tmp(left.size(), left.type(),cv::Scalar::all(0)), left1(left.size(),left.type(), cv::Scalar::all(0));
 #ifdef USE_PROJECT_ERROR
 		std::vector<cv::Point2f> pro_points;
@@ -93,13 +97,21 @@ namespace VISG {
 		DrawBoard::handle().ShowAR(left_ar);
 		DrawBoard::handle().DrawMatch(ref_image, left1, my_matches, p_frame_ref_->left_key_points, p_frame_cur_->left_key_points);
 #endif	
-		if (0 == ((++frame_id_) % Common::EveryNFrames)) {
+		if (0 == ((frame_id_++) % Common::EveryNFrames)) {
+			BASolver ba_solver;
+			ba_solver.Solve(local_frames_, p_frame_ref_);
+			std::vector<cv::Point2f> pro_points;
+			float e = Optimizer::ProjectPointsRefTrack2D3D(p_frame_ref_->map_points,
+				p_frame_cur_->left_key_points, my_matches, p_frame_cur_->rRc, p_frame_cur_->rtc, pro_points);
+			std::cout << "[OrbTracker Track] Project error after BA: " << e << std::endl;
+			local_frames_.clear();
+			local_frames_.resize(Common::EveryNFrames, nullptr);
 			p_frame_cur_->StereoMatch();
 			p_frame_ref_ = p_frame_cur_;
 			ref_image = left.clone();
 		}
 	//	std::cout << "[OrbTracker Track] p_frame_ref_ status: after " << p_frame_ref_.use_count() << std::endl;
-		motion_counter_ = 0;
+		
 		return true;
 	}
 
@@ -111,7 +123,8 @@ namespace VISG {
 	void OrbTracker::Reboot() {
 		p_frame_cur_ = p_frame_last_ = p_frame_ref_ = nullptr;
 		motion_counter_ = 0;
-		key_frames_.clear();
+		frame_id_ = 0;
+		local_frames_.clear();
 		ref_image.release();
 	}
 

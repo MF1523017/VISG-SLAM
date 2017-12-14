@@ -196,7 +196,7 @@ bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches,
 	std::cout << "[Frame::FetchMatchPoints]: orbmatches size: " << matches.size() << std::endl;
 	std::vector<cv::KeyPoint> & ref_key_points = p_frame_ref->left_key_points;
 	const std::vector<bool> &ref_inliers = p_frame_ref->inliers;
-	const std::vector<MapPoint::Ptr> &ref_map_points = p_frame_ref->map_points;
+	std::vector<MapPoint::Ptr> &ref_map_points = p_frame_ref->map_points;
 	std::vector<cv::Point2f> points_ref; // ref is prev frame
 	std::vector<cv::Point2f> points_cur;
 
@@ -211,7 +211,6 @@ bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches,
 			continue;
 		const int & trainIdx = matches[i].second;
 		points_ref.push_back(ref_key_points[queryIdx].pt);
-		
 		points_cur.push_back(left_key_points[trainIdx].pt);
 		matches1.push_back(matches[i]);
 	}
@@ -239,11 +238,14 @@ bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches,
 	for (size_t i = 0; i < mask.rows; ++i) {
 		int status = mask.at<char>(i, 0);
 		if (status) {
+			const int & queryIdx = matches1[i].first;
+			const int & trainIdx = matches1[i].second;
 			inliers_matches.push_back(matches1[i]);
 			points21.push_back(points_ref[i]);
 			points22.push_back(points_cur[i]);
-			points3.push_back(Pdouble2cv(ref_map_points[matches1[i].first]->point));
-			map_p3ds.push_back(ref_map_points[matches1[i].first]);
+			points3.push_back(Pdouble2cv(ref_map_points[queryIdx]->point));
+			ref_map_points[queryIdx]->BeObserved(id_, trainIdx);
+			map_p3ds.push_back(ref_map_points[queryIdx]);
 		}
 	}
 	return true;
@@ -365,6 +367,9 @@ Frame::~Frame() {
 	right_descriptors.release();
 	left_key_points.clear();
 	right_key_points.clear();
+	match_points.clear();
+	map_points.clear();
+	inliers.clear();
 
 }
 

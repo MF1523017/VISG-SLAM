@@ -1,4 +1,5 @@
 #include "optimizer.h"
+#include "utils.hpp"
 
 namespace VISG {
 	//R,t:brings points from the  camera coordinate system  to the world coordinate system
@@ -124,5 +125,72 @@ namespace VISG {
 		t.at<float>(2, 0) = pose[5];
 		delete[]pose;
 		//delete[]p3d;
+	}
+
+	void BASolver::Solve(std::vector<Frame::Ptr> &local_frames, Frame::Ptr p_frame_ref) {
+		// turn pose from Eigen to double *
+		const size_t id_0 = p_frame_ref->id() + 1;
+		double *poses = new double[6 * local_frames.size()]{0};
+		for (size_t k = 0; k < local_frames.size(); ++k) {
+			if (!local_frames[k])
+				continue;
+			std::cout << "[BASolver::Solve] wTc before BA: k: T" << k << std::endl<<local_frames[k]->wTc << std::endl;
+			Eigen::Matrix4f cTr = HPose(local_frames[k]->rRc, local_frames[k]->rtc).inverse();
+			cv::Mat R(3, 3, CV_64F);
+			for (size_t i = 0; i < 3; ++i) {
+				for (size_t j = 0; j < 3; ++j) {
+					R.at<double>(i, j) = static_cast<double>(cTr(i, j));
+				}
+			}
+			cv::Mat Rvec(3, 1, CV_64F);
+			cv::Rodrigues(R, Rvec);
+			poses[6 * k] = Rvec.at<double>(0, 0);
+			poses[6 * k + 1] = Rvec.at<double>(1, 0);
+			poses[6 * k + 2] = Rvec.at<double>(2, 0);
+			poses[6 * k + 3] = static_cast<double>(cTr(0, 3));
+			poses[6 * k + 4] = static_cast<double>(cTr(1, 3));
+			poses[6 * k + 5] = static_cast<double>(cTr(2, 3));
+		}
+		
+		// solve BA problem
+		std::cout << "[BASolver::Solve] BA problem: " << std::endl;
+		ceres::LossFunction* loss_function = new ceres::HuberLoss(4);
+		auto mp_it = p_frame_ref->map_points.begin();
+		for (; mp_it != p_frame_ref->map_points.end(); ++mp_it) {
+			if (!(*mp_it))
+				continue;
+			for (MapPoint::Observed::iterator ob_it = (*mp_it)->observed.begin(); ob_it != (*mp_it)->observed.end(); ++ob_it) {
+				const size_t idx = ob_it->first - id_0;
+				const double x = static_cast<double>(local_frames[idx]->left_key_points[ob_it->second].pt.x);
+				const double y = static_cast<double>(local_frames[idx]->left_key_points[ob_it->second].pt.y);
+				ceres::CostFunction *cost_function = BAProjectionError::Create(x, y);
+				problem_.AddResidualBlock(cost_function, loss_function, poses + 6 * idx,(*mp_it)->point);
+			}
+		}
+		ceres::Solver::Options options;
+		options.linear_solver_type = ceres::DENSE_SCHUR;
+		options.minimizer_progress_to_stdout = true;
+		ceres::Solver::Summary summary;
+		ceres::Solve(options, &problem_, &summary);
+		
+		// turn pose from double * to Eigen
+		for (size_t k = 0; k < local_frames.size(); ++k) {
+			if (!local_frames[k])
+				continue;
+			cv::Mat Rvec(3, 1, CV_64F);
+			Rvec.at<double>(0, 0) = poses[6 * k];
+			Rvec.at<double>(1, 0) = poses[6 * k + 1];
+			Rvec.at<double>(2, 0) = poses[6 * k + 2];
+			cv::Mat R(3, 3, CV_64F);
+			cv::Rodrigues(Rvec, R);
+			Eigen::Matrix3f cRr = Rcv2Eigen(R);
+			Eigen::Vector3f ctr(poses[6 * k + 3], poses[6 * k + 4], poses[6 * k + 5]);
+			Eigen::Matrix4f rTc = HPose(cRr, ctr).inverse();
+			HPose2Rt(rTc, local_frames[k]->rRc, local_frames[k]->rtc);
+			local_frames[k]->wTc = p_frame_ref->wTc * rTc;
+			std::cout << "[BASolver::Solve] wTc after BA: T" << k << std::endl<< local_frames[k]->wTc<< std::endl;
+			HPose2Rt(local_frames[k]->wTc, local_frames[k]->wRc, local_frames[k]->wtc);
+			
+		}
 	}
 }

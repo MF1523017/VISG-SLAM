@@ -2,6 +2,7 @@
 #define OPTIMIZER_H
 #include "common.h"
 #include "map_point.h"
+#include "frame.h"
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 namespace VISG {
@@ -157,7 +158,7 @@ namespace VISG {
 	public:
 		BASolver() = default;
 		//TODO change input
-		void Solve(const std::vector<cv::Point2f>&points2, const std::vector<cv::Point3f>&points3, cv::Mat &R, cv::Mat&t);
+		void Solve(std::vector<Frame::Ptr> &local_frames , Frame::Ptr p_frame_ref);
 	private:
 		ceres::Problem problem_;
 	};
