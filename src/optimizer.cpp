@@ -91,21 +91,18 @@ namespace VISG {
 
 	void PnpSolver::Solve(const std::vector<cv::Point2f>&points2, const std::vector<cv::Point3f>&points3, cv::Mat &R, cv::Mat&t) {
 		double *pose = new double[6]{0};
-		std::cout << "[PnpSolver::Solve] pose before: ";
-		for (size_t i = 0; i < 6; ++i) {
-			std::cout << pose[i] << " ";
-		}
 		std::cout << std::endl;
 		ceres::LossFunction* loss_function = new ceres::HuberLoss(4);
 		double *p3d = new double[3 * points3.size()];
 		for (size_t i = 0; i < points2.size(); ++i) {
+		//	std::cout << "[PnpSolver::Solve] point3d: " << points3[i] << std::endl;
 			p3d[3*i] = static_cast<double>(points3[i].x);
 			p3d[3*i+1] = static_cast<double>(points3[i].y);
 			p3d[3*i+2] = static_cast<double>(points3[i].z);
 			ceres::CostFunction *cost_function = ProjectionError::Create(static_cast<double>(points2[i].x),
-																		static_cast<double>(points2[i].y));
+																		static_cast<double>(points2[i].y), p3d + 3 * i);
 			
-			problem_.AddResidualBlock(cost_function, loss_function, pose, p3d+3*i);
+			problem_.AddResidualBlock(cost_function, loss_function, pose);
 		}
 		ceres::Solver::Options options;
 		options.linear_solver_type = ceres::DENSE_SCHUR;

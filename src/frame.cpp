@@ -137,34 +137,18 @@ size_t Frame::StereoMatch() {
 }
 
 bool Frame::RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
-	MyMatches matches,matches1;
-	inliers_matches.clear();
-	// get the init matches
-	Matcher::OrbMatch(matches, p_frame_ref->left_descriptors, left_descriptors);
-	
-	std::vector<cv::KeyPoint> & ref_key_points = p_frame_ref->left_key_points;
-	const std::vector<bool> &ref_inliers = p_frame_ref->inliers;
-	std::vector<cv::Point2f> points1;
-	std::vector<cv::Point2f> points2;
-	// apply for memory
-	matches1.reserve(matches.size());
-	points1.reserve(matches.size());
-	points2.reserve(matches.size());
-	for (size_t i = 0; i < matches.size(); ++i) {
-		const int & queryIdx = matches[i].first;
-		if (!ref_inliers[queryIdx])
-			continue;
-		const int & trainIdx = matches[i].second;
-		points1.push_back(ref_key_points[queryIdx].pt);
-		points2.push_back(left_key_points[trainIdx].pt);
-		matches1.push_back(matches[i]);
-	}
-	if (points1.size() < 8) {
-		std::cout << "[Frame::RefTrack2D2D] error: points size is too less: " << points1.size() << std::endl;
+	std::vector<cv::Point2f> points21;
+	std::vector<cv::Point2f> points22;
+	std::vector<cv::Point3f> points3;
+	bool ret;
+	MyMatches matches1;
+	ret = FetchMatchPoints(p_frame_ref, matches1, points21, points22, points3);
+	if (!ret) {
+		std::cout << "[Frame::RefTrack2D3D]: fetch match points error!" << std::endl;
 		return false;
 	}
 	cv::Mat R(3, 3, CV_32F), t(3, 1, CV_32F);
-	bool ret = RecoverPose(points1, points2, matches1,inliers_matches,R,t);
+	ret = RecoverPose(points21, points22, matches1,inliers_matches,R,t);
 	if (!ret) {
 		std::swap(inliers_matches, matches1);
 		return false;
@@ -201,7 +185,7 @@ bool Frame::RecoverPose(const std::vector<cv::Point2f> &points1, const std::vect
 	return true;
 }
 
-bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, std::vector<cv::Point2f> &points2, std::vector<cv::Point3f> &points3) {
+bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, std::vector<cv::Point2f> &points21, std::vector<cv::Point2f> &points22, std::vector<cv::Point3f> &points3) {
 	MyMatches matches, matches1;
 	inliers_matches.clear();
 	// get the init matches
@@ -210,7 +194,7 @@ bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches,
 	std::vector<cv::KeyPoint> & ref_key_points = p_frame_ref->left_key_points;
 	const std::vector<bool> &ref_inliers = p_frame_ref->inliers;
 	const MapPoints &ref_map_points = p_frame_ref->map_points;
-	std::vector<cv::Point2f> points_ref;
+	std::vector<cv::Point2f> points_ref; // ref is prev frame
 	std::vector<cv::Point2f> points_cur;
 	
 	std::vector<cv::Point3f> w_map_points;
@@ -224,9 +208,9 @@ bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches,
 		if (!ref_inliers[queryIdx])
 			continue;
 		const int & trainIdx = matches[i].second;
-		points_ref.push_back(left_key_points[trainIdx].pt);
-		points_cur.push_back(ref_key_points[queryIdx].pt);
+		points_ref.push_back(ref_key_points[queryIdx].pt);
 		w_map_points.push_back(PEigen2cv(ref_map_points[queryIdx]));
+		points_cur.push_back(left_key_points[trainIdx].pt);
 		matches1.push_back(matches[i]);
 	}
 	if (matches1.size() < 3) {
@@ -246,13 +230,15 @@ bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches,
 		return false;
 	}
 	inliers_matches.reserve(matches1.size());
-	points2.reserve(matches1.size());
+	points21.reserve(matches1.size());
+	points22.reserve(matches1.size());
 	points3.reserve(matches1.size());
 	for (size_t i = 0; i < mask.rows; ++i) {
 		int status = mask.at<char>(i, 0);
 		if (status) {
 			inliers_matches.push_back(matches1[i]);
-			points2.push_back(points_ref[i]);
+			points21.push_back(points_ref[i]);
+			points22.push_back(points_cur[i]);
 			points3.push_back(w_map_points[i]);
 		}
 	}
@@ -260,23 +246,24 @@ bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches,
 }
 
 bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
-	std::vector<cv::Point2f> points2;
+	std::vector<cv::Point2f> points21;
+	std::vector<cv::Point2f> points22;
 	std::vector<cv::Point3f> points3;
 	bool ret;
-	ret = FetchMatchPoints(p_frame_ref, inliers_matches, points2, points3);
+	ret = FetchMatchPoints(p_frame_ref, inliers_matches, points21, points22, points3);
 	if (!ret) {
 		std::cout << "[Frame::RefTrack2D3D]: fetch match points error!" << std::endl;
 		return false;
 	}
 	cv::Mat R(3,3,CV_32F), t(3,1,CV_32F);
 	
-	/*ret = RecoverPose(points2, points3, matches1, inliers_matches,R,t);
+	/*ret = RecoverPose(points22, points3,R,t);
 	if (!ret) {
-		std::swap(inliers_matches, matches1);
+		std::cout << "[Frame::RefTrack2D3D]: RecoverPose error!" << std::endl;
 		return false;
 	}*/
 	
-	ret = RecoverPoseWithPnpSolver(points2, points3, R, t);
+	ret = RecoverPoseWithPnpSolver(points22, points3, R, t);
 
 	Eigen::Matrix3f cRr = Rcv2Eigen(R);//ref to cur
 	Eigen::Vector3f ctr = Tcv2Eigen(t);
@@ -288,8 +275,7 @@ bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 	return true;
 }
 
-bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, const MyMatches &matches, 
-	MyMatches &inliers_matches, cv::Mat &R,cv::Mat &t) {
+bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, cv::Mat &R,cv::Mat &t) {
 	if (points2.size() != points3.size()) {
 		std::cout << "[Frame::RecoverPose] correspondences error " << std::endl;
 		return false;
@@ -300,16 +286,6 @@ bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vect
 	if (!ret) {
 		std::cout << "[Frame::RecoverPose] pnp error" << std::endl;
 		return false;
-	}
-	int valid_count = cv::countNonZero(mask);
-	if (valid_count < 10 || static_cast<double>(valid_count) / points2.size() < 0.6)
-		return false;
-	inliers_matches.reserve(matches.size());
-	for (size_t i = 0; i < mask.rows; ++i) {
-		int status = mask.at<char>(i, 0);
-		if (status) {
-			inliers_matches.push_back(matches[i]);
-		}
 	}
 	cv::Rodrigues(Rvec, R);
 

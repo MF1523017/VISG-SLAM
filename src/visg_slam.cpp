@@ -1,6 +1,6 @@
 #include "visg_slam.h"
 #include "draw_board.h"
-#define USE_CHESSBOARD
+//#define USE_CHESSBOARD
 namespace VISG {
 	VisgSlam::VisgSlam():tracker_(new OrbTracker) {
 		zed_.Open(3,100);

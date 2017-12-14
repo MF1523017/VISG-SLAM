@@ -23,16 +23,20 @@ namespace VISG {
 
 };
 	struct ProjectionError {
-		ProjectionError(double observed_x, double observed_y)
-			: observed_x(observed_x), observed_y(observed_y) {}
+		ProjectionError(double observed_x, double observed_y,double *p3d)
+			: observed_x(observed_x), observed_y(observed_y),point_x(p3d[0]),point_y(p3d[1]),point_z(p3d[2]) {}
 
 		template <typename T>
 		bool operator()(const T *const pose,
-			const T* const point,
+			//const T* const point,
 			T* residuals) const {
 			// camera[0,1,2] are the angle-axis rotation.
 			T p[3];
-			ceres::AngleAxisRotatePoint(pose, point, p);
+			T point[3];
+			point[0] = (T)point_x;
+			point[1] = (T)point_y;
+			point[2] = (T)point_z;
+			ceres::AngleAxisRotatePoint(pose, (T*)point, p);
 
 			// camera[3,4,5] are the translation.
 			p[0] += pose[3];
@@ -71,13 +75,16 @@ namespace VISG {
 		// Factory to hide the construction of the CostFunction object from
 		// the client code.
 		static ceres::CostFunction* Create(const double observed_x,
-			const double observed_y) {
-			return (new ceres::AutoDiffCostFunction<ProjectionError, 2,6,3>(
-				new ProjectionError(observed_x, observed_y)));
+			const double observed_y,double *p3d) {
+			return (new ceres::AutoDiffCostFunction<ProjectionError, 2,6>(
+				new ProjectionError(observed_x, observed_y,p3d)));
 		}
 		
 		double observed_x;
 		double observed_y;
+		double point_x;
+		double point_y;
+		double point_z;
 	};
 	class PnpSolver {
 	public:

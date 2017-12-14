@@ -8,10 +8,7 @@ lMr: the right image corr to left image corr
 #include <Eigen/Dense>
 #include <utility>
 #include <algorithm>
-
 #include "type.h"
-
-
 #define USE_PROJECT_ERROR
 #define DRAW
 namespace VISG {

@@ -5,6 +5,7 @@
 #include "utils.hpp"
 #include "camera.h"
 #include "visg_slam.h"
+#include "timer.h"
 #include <thread>
 using namespace VISG;
 
@@ -68,8 +69,12 @@ void test_offline() {
 	VisgSlamOffline visg;
 	std::vector<std::string> images;
 	const std::string data_dir("H:\\dataset\\20171207_demo\\20171207");
+	//const std::string data_dir("H:\\dataset\\20171120\\20171120");
+
 	loadImage(data_dir, images);
+	Timer timer;
 	for (size_t i = 0; i < images.size(); ++i) {
+		timer.Reset();
 		const std::string left_image(data_dir + "\\cam0\\data\\" + images[i]);
 		const std::string right_image(data_dir + "\\cam1\\data\\" + images[i]);
 		cv::Mat left = cv::imread(left_image);
@@ -79,5 +84,6 @@ void test_offline() {
 			return;
 		}
 		visg.Run(left, right);
+		std::cout << "Time elapsed(ms): " << timer.ElapsedMS() << std::endl;
 	}
 }
