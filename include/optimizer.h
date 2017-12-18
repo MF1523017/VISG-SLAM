@@ -157,11 +157,91 @@ namespace VISG {
 	class BASolver {
 	public:
 		BASolver() = default;
-		//TODO change input
 		void Solve(std::vector<Frame::Ptr> &local_frames , Frame::Ptr p_frame_ref);
 	private:
 		ceres::Problem problem_;
 	};
+
+
+	struct BAOnlyPointsProjectionError {
+		BAOnlyPointsProjectionError(double observed_x, double observed_y,double *pose)
+			: observed_x(observed_x), observed_y(observed_y),Ry(pose[0]),Rp(pose[1]),
+			Rr(pose[2]),tx(pose[3]),ty(pose[4]),tz(pose[5]){}
+
+		template <typename T>
+		bool operator()(const T* const point,
+			T* residuals) const {
+			// camera[0,1,2] are the angle-axis rotation.
+			T p[3];
+			T R[3] = { static_cast<T>(Ry),static_cast<T>(Rp),static_cast<T>(Rr)};
+			T t[3] = { static_cast<T>(tx),static_cast<T>(ty),static_cast<T>(tz) };
+			ceres::AngleAxisRotatePoint(R, point, p);
+
+			// camera[3,4,5] are the translation.
+			p[0] += t[0];
+			p[1] += t[1];
+			p[2] += t[2];
+
+			// Compute the center of distortion. The sign change comes from
+			// the camera model that Noah Snavely's Bundler assumes, whereby
+			// the camera coordinate system has a negative z axis.
+			T xp = p[0] / p[2];
+			T yp = p[1] / p[2];
+
+			//// Apply second and fourth order radial distortion.
+			//const T& l1 = camera[7];
+			//const T& l2 = camera[8];
+			//T r2 = xp*xp + yp*yp;
+			//T distortion = 1.0 + r2  * (l1 + l2  * r2);
+
+			// Compute final projected point position.
+			/*const T& fx = camera[];
+			T predicted_x = focal * distortion * xp;
+			T predicted_y = focal * distortion * yp;*/
+			const T  fx = static_cast<T>(Common::Fx);
+			const T  fy = static_cast<T>(Common::Fy);
+			const T  cx = static_cast<T>(Common::Cx);
+			const T  cy = static_cast<T>(Common::Cy);
+			T predicted_x = fx * xp + cx;
+			T predicted_y = fy * yp + cy;
+
+			// The error is the difference between the predicted and observed position.
+			residuals[0] = predicted_x - observed_x;
+			residuals[1] = predicted_y - observed_y;
+			return true;
+		}
+
+		// Factory to hide the construction of the CostFunction object from
+		// the client code.
+		static ceres::CostFunction* Create(const double observed_x,
+			const double observed_y,double *pose) {
+			return (new ceres::AutoDiffCostFunction<BAOnlyPointsProjectionError, 2, 3>(
+				new BAOnlyPointsProjectionError(observed_x, observed_y,pose)));
+		}
+
+		double observed_x;
+		double observed_y;
+		double Ry,Rp,Rr;
+		double tx, ty, tz;
+	};
+	class BAOnlyPointsSolver {
+	public:
+		BAOnlyPointsSolver() = default;
+		void Solve(std::vector<Frame::Ptr> &local_frames, Frame::Ptr p_frame_ref);
+	private:
+		ceres::Problem problem_;
+	};
+
+	class BAOnlyPosesSolver {
+	public:
+		BAOnlyPosesSolver() = default;
+		void Solve(std::vector<Frame::Ptr> &local_frames, Frame::Ptr p_frame_ref);
+	private:
+		ceres::Problem problem_;
+
+	};
+
+
 
 }
 #endif

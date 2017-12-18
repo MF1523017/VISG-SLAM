@@ -98,12 +98,14 @@ namespace VISG {
 		DrawBoard::handle().DrawMatch(ref_image, left1, my_matches, p_frame_ref_->left_key_points, p_frame_cur_->left_key_points);
 #endif	
 		if (0 == ((frame_id_++) % Common::EveryNFrames)) {
-			/*BASolver ba_solver;
-			ba_solver.Solve(local_frames_, p_frame_ref_);
+			BAOnlyPointsSolver ba_only_points_solver;
+			ba_only_points_solver.Solve(local_frames_, p_frame_ref_);
+			BAOnlyPosesSolver ba_only_pose_solver;
+			ba_only_pose_solver.Solve(local_frames_, p_frame_ref_);
 			std::vector<cv::Point2f> pro_points;
 			float e = Optimizer::ProjectPointsRefTrack2D3D(p_frame_ref_->map_points,
 				p_frame_cur_->left_key_points, my_matches, p_frame_cur_->rRc, p_frame_cur_->rtc, pro_points);
-			std::cout << "[OrbTracker Track] Project error after BA: " << e << std::endl;*/
+			std::cout << "[OrbTracker Track] Project error after BA: " << e << std::endl;
 			local_frames_.clear();
 			local_frames_.resize(Common::EveryNFrames, nullptr);
 			p_frame_cur_->StereoMatch();
