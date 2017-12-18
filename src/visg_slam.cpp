@@ -1,6 +1,7 @@
 #include "visg_slam.h"
 #include "draw_board.h"
 //#define USE_CHESSBOARD
+
 namespace VISG {
 	VisgSlam::VisgSlam():tracker_(new OrbTracker) {
 		zed_.Open(3,100);
@@ -73,6 +74,7 @@ namespace VISG {
 	VisgSlamOffline::VisgSlamOffline() :tracker_(new OrbTracker) {
 
 		// 720 mode
+#ifdef HDMODE
 		Common::Height = 720;
 		Common::Width = 1280;
 		Common::Fx = 695.822;
@@ -86,9 +88,9 @@ namespace VISG {
 		Common::BaseLine = 0.12;
 		Common::FxInv = 1.0 / Common::Fx;
 		Common::FyInv = 1.0 / Common::Fy;
-		
+#else
 		// vga mode
-		/*
+		
 		Common::Height = 376;
 		Common::Width = 672;
 		Common::Fx = 345.766;
@@ -101,7 +103,7 @@ namespace VISG {
 		Common::ltr.at<float>(0, 0) = 0.12;
 		Common::FxInv = 1.0 / Common::Fx;
 		Common::FyInv = 1.0 / Common::Fy;
-		*/
+#endif
 	}
 	void VisgSlamOffline::Run(cv::Mat &left, cv::Mat &right) {
 		cv::Mat left_, right_;

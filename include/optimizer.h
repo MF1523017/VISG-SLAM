@@ -147,7 +147,7 @@ namespace VISG {
 		// the client code.
 		static ceres::CostFunction* Create(const double observed_x,
 			const double observed_y) {
-			return (new ceres::AutoDiffCostFunction<BAProjectionError, 2, 6,3>(
+			return (new ceres::AutoDiffCostFunction<BAProjectionError, 2,6,3>(
 				new BAProjectionError(observed_x, observed_y)));
 		}
 

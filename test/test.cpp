@@ -67,9 +67,13 @@ void test_VisgSlamOffline(char **argv){
 void test_offline() {
 	VisgSlamOffline visg;
 	std::vector<std::string> images;
-	//const std::string data_dir("H:\\dataset\\20171207_demo\\20171207");
+#ifdef HDMODE
+	const std::string data_dir("H:\\dataset\\20171207_demo\\20171207");
 	//const std::string data_dir("H:\\dataset\\20171120\\20171120");
+#else
+	
 	const std::string data_dir("H:\\dataset\\20171214_1\\20171214");
+#endif
 	loadImage(data_dir, images);
 	Timer timer;
 	for (size_t i = 0; i < images.size(); ++i) {
