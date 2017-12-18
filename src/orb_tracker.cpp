@@ -11,6 +11,7 @@ namespace VISG {
 	void OrbTracker::operator()(cv::Mat &left, cv::Mat &right) {
 		p_frame_cur_ = std::make_shared<Frame>(frame_id_);
 		p_frame_cur_->ExtractFeatures(left, right);
+		
 	//	DrawBoard::handle().DrawFeatures(right, p_frame_cur_->right_key_points, false);
 		// TODO ,
 		switch (state_)
@@ -58,7 +59,9 @@ namespace VISG {
 	bool OrbTracker::Track(cv::Mat &left, cv::Mat &right){
 		// TODO not defined
 	//	std::cout << "[OrbTracker Track] p_frame_ref_ status: before " << p_frame_ref_.use_count() << std::endl;
+		p_frame_cur_->StereoMatch();
 		MyMatches my_matches;
+
 		// recover pose using  2d to 2d corrspondence 
 		/*auto ret = p_frame_cur_->RefTrack2D2D(p_frame_ref_, my_matches);
 		std::cout << "[OrbTracker Track] RefTrack2D2D ret: " << ret << " mathches size: " << my_matches.size() << std::endl;*/
@@ -98,17 +101,17 @@ namespace VISG {
 		DrawBoard::handle().DrawMatch(ref_image, left1, my_matches, p_frame_ref_->left_key_points, p_frame_cur_->left_key_points);
 #endif	
 		if (0 == ((frame_id_++) % Common::EveryNFrames)) {
-			BAOnlyPointsSolver ba_only_points_solver;
+			/*BAOnlyPointsSolver ba_only_points_solver;
 			ba_only_points_solver.Solve(local_frames_, p_frame_ref_);
 			BAOnlyPosesSolver ba_only_pose_solver;
-			ba_only_pose_solver.Solve(local_frames_, p_frame_ref_);
+			ba_only_pose_solver.Solve(local_frames_, p_frame_ref_);*/
 			std::vector<cv::Point2f> pro_points;
 			float e = Optimizer::ProjectPointsRefTrack2D3D(p_frame_ref_->map_points,
 				p_frame_cur_->left_key_points, my_matches, p_frame_cur_->rRc, p_frame_cur_->rtc, pro_points);
 			std::cout << "[OrbTracker Track] Project error after BA: " << e << std::endl;
 			local_frames_.clear();
 			local_frames_.resize(Common::EveryNFrames, nullptr);
-			p_frame_cur_->StereoMatch();
+			
 			p_frame_ref_ = p_frame_cur_;
 			ref_image = left.clone();
 		}

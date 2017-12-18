@@ -28,8 +28,7 @@ public:
 	bool RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches&inliers_matches);
 	bool RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches);
 	void MotionTrack(Frame::Ptr p_frame_ref);
-	bool FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, std::vector<cv::Point2f> &points21, std::vector<cv::Point2f> &points22,
-		std::vector<cv::Point3f> &points3,std::vector<MapPoint::Ptr> &map_p3ds);
+	bool FetchMatches(Frame::Ptr p_frame_ref, MyMatches &inliers_matches);
 	bool IsKeyFrame(MyMatches &matches);
 	void GetwMapPoints(std::vector<Eigen::Vector3f> &valid_map_points);
 	~Frame();
@@ -48,11 +47,10 @@ public:
 
 private:
 	void Reset();
-	bool RecoverPose(const std::vector<cv::Point2f> &points1, const std::vector<cv::Point2f> &points2, const MyMatches &matches,
-		MyMatches &inliers_matches,cv::Mat &R,cv::Mat &t);
-	bool RecoverPose(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, cv::Mat &R, cv::Mat &t);
-	bool RecoverPoseWithPnpSolver(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, 
-		const std::vector<MapPoint::Ptr> &mp_p3ds,cv::Mat &R, cv::Mat &t);
+	bool RecoverPose(Frame::Ptr p_frame_ref,MyMatches &inliers_matches,cv::Mat &R,cv::Mat &t);
+	bool RecoverPoseWithcvPnp(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t);
+	bool RecoverPoseWithPnpSolver(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t);
+	bool RecoverPoseWithStereoMatchesPnp(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t);
 	Feature::Ptr p_orb_left_;
 	Feature::Ptr p_orb_right_;
 	size_t id_;

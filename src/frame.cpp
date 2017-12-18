@@ -73,7 +73,7 @@ size_t Frame::StereoMatch() {
 		}
 		if (best_dist < Common::BestOrbDistance) {
 			const float  rx = right_key_points[best_r_idx].pt.x;
-			match_points[i] = Eigen::Vector3f(lp.x, lp.y, rx);
+			match_points[i] = Eigen::Vector3d(lp.x, lp.y, rx);
 			double z = Common::BaseLine * Common::Fx / (lp.x - rx);
 			if (z <= 0 || z < 0.5 || z >15)
 				continue;
@@ -89,21 +89,16 @@ size_t Frame::StereoMatch() {
 }
 
 bool Frame::RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
-	std::vector<cv::Point2f> points21;
-	std::vector<cv::Point2f> points22;
-	std::vector<cv::Point3f> points3;
-	std::vector<MapPoint::Ptr> mp_p3ds;
 	bool ret;
-	MyMatches matches1;
-	ret = FetchMatchPoints(p_frame_ref, matches1, points21, points22, points3, mp_p3ds);
+	ret = FetchMatches(p_frame_ref, inliers_matches);
 	if (!ret) {
-		std::cout << "[Frame::RefTrack2D3D]: fetch match points error!" << std::endl;
+		std::cout << "[Frame::RefTrack2D3D]: fetch matches error!" << std::endl;
 		return false;
 	}
 	cv::Mat R(3, 3, CV_32F), t(3, 1, CV_32F);
-	ret = RecoverPose(points21, points22, matches1,inliers_matches,R,t);
+	ret = RecoverPose(p_frame_ref, inliers_matches,R,t);
 	if (!ret) {
-		std::swap(inliers_matches, matches1);
+		std::cout << "[Frame::RefTrack2D3D]: RecoverPose error!" << std::endl;
 		return false;
 	}
 	 
@@ -118,34 +113,32 @@ bool Frame::RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 }
 
 
-bool Frame::RecoverPose(const std::vector<cv::Point2f> &points1, const std::vector<cv::Point2f> &points2, const MyMatches &matches, 
-	MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t) {
+bool Frame::RecoverPose(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t) {
+	std::vector<cv::Point2f> points_ref, points_cur;
+	points_cur.reserve(inliers_matches.size());
+	points_ref.reserve(inliers_matches.size());
+	for (auto it = inliers_matches.begin(); it != inliers_matches.end(); ++it) {
+		points_ref.push_back(p_frame_ref->left_key_points[it->first].pt);
+		points_cur.push_back(left_key_points[it->second].pt);
+	}
 	cv::Mat mask;
-	cv::Mat E = cv::findEssentialMat(points1, points2, Common::K, cv::RANSAC, 0.999, 1.0, mask);
+	cv::Mat E = cv::findEssentialMat(points_ref, points_cur, Common::K, cv::RANSAC, 0.999, 1.0, mask);
 	if (E.empty())
 		return false;
 	int valid_count = cv::countNonZero(mask);
-	if (valid_count < 10 || static_cast<double>(valid_count) / points1.size() < 0.6)
+	if (valid_count < 10 || static_cast<double>(valid_count) / points_cur.size() < 0.6)
 		return false;
-	inliers_matches.reserve(matches.size());
-	for (size_t i = 0; i < mask.rows; ++i) {
-		int status = mask.at<char>(i, 0);
-		if (status) {
-			inliers_matches.push_back(matches[i]);
-		}
-	}
-	cv::recoverPose(E, points1, points2, Common::K, R, t, mask);// will change the status of the mask
+
+	cv::recoverPose(E, points_ref, points_cur, Common::K, R, t, mask);// will change the status of the mask
 	return true;
 }
 
-bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, std::vector<cv::Point2f> &points21, 
-	std::vector<cv::Point2f> &points22, std::vector<cv::Point3f> &points3, std::vector<MapPoint::Ptr> &map_p3ds) {
+bool Frame::FetchMatches(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 	MyMatches matches, matches1;
-	inliers_matches.clear();
 	// get the init matches
 	Matcher::OrbMatch(matches, p_frame_ref->left_descriptors, left_descriptors);
 	std::cout << "[Frame::FetchMatchPoints]: orbmatches size: " << matches.size() << std::endl;
-	std::vector<cv::KeyPoint> & ref_key_points = p_frame_ref->left_key_points;
+	const std::vector<cv::KeyPoint> & ref_key_points = p_frame_ref->left_key_points;
 	const std::vector<bool> &ref_inliers = p_frame_ref->inliers;
 	std::vector<MapPoint::Ptr> &ref_map_points = p_frame_ref->map_points;
 	std::vector<cv::Point2f> points_ref; // ref is prev frame
@@ -158,9 +151,9 @@ bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches,
 
 	for (size_t i = 0; i < matches.size(); ++i) {
 		const int & queryIdx = matches[i].first;
-		if (!ref_inliers[queryIdx])
-			continue;
 		const int & trainIdx = matches[i].second;
+		if (!ref_inliers[queryIdx] || !inliers[trainIdx])
+			continue;
 		points_ref.push_back(ref_key_points[queryIdx].pt);
 		points_cur.push_back(left_key_points[trainIdx].pt);
 		matches1.push_back(matches[i]);
@@ -182,47 +175,35 @@ bool Frame::FetchMatchPoints(Frame::Ptr p_frame_ref, MyMatches &inliers_matches,
 		return false;
 	}
 	inliers_matches.reserve(matches1.size());
-	points21.reserve(matches1.size());
-	points22.reserve(matches1.size());
-	points3.reserve(matches1.size());
-	map_p3ds.reserve(matches1.size());
 	for (size_t i = 0; i < mask.rows; ++i) {
 		int status = mask.at<char>(i, 0);
 		if (status) {
 			const int & queryIdx = matches1[i].first;
 			const int & trainIdx = matches1[i].second;
 			inliers_matches.push_back(matches1[i]);
-			points21.push_back(points_ref[i]);
-			points22.push_back(points_cur[i]);
-			points3.push_back(Pdouble2cv(ref_map_points[queryIdx]->point));
 			ref_map_points[queryIdx]->BeObserved(id_, trainIdx);
-			map_p3ds.push_back(ref_map_points[queryIdx]);
 		}
 	}
 	return true;
 }
 
 bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
-	std::vector<cv::Point2f> points21;
-	std::vector<cv::Point2f> points22;
-	std::vector<cv::Point3f> points3;
-	std::vector<MapPoint::Ptr> mp_p3ds;
 	bool ret;
-	ret = FetchMatchPoints(p_frame_ref, inliers_matches, points21, points22, points3, mp_p3ds);
+	ret = FetchMatches(p_frame_ref, inliers_matches);
 	if (!ret) {
 		std::cout << "[Frame::RefTrack2D3D]: fetch match points error!" << std::endl;
 		return false;
 	}
 	cv::Mat R(3,3,CV_32F), t(3,1,CV_32F);
 	
-	/*ret = RecoverPose(points22, points3,R,t);
+	/*ret = RecoverPoseWithcvPnp(p_frame_ref, inliers_matches, R, t);
 	if (!ret) {
 		std::cout << "[Frame::RefTrack2D3D]: RecoverPose error!" << std::endl;
 		return false;
 	}*/
 	
-	ret = RecoverPoseWithPnpSolver(points22, points3, mp_p3ds, R, t);
-
+	//ret = RecoverPoseWithPnpSolver(p_frame_ref, inliers_matches, R, t);
+	ret = RecoverPoseWithStereoMatchesPnp(p_frame_ref, inliers_matches, R, t);
 	Eigen::Matrix3f cRr = Rcv2Eigen(R);//ref to cur
 	Eigen::Vector3f ctr = Tcv2Eigen(t);
 	Eigen::Matrix4f rTc = HPose(cRr, ctr).inverse();
@@ -233,10 +214,14 @@ bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 	return true;
 }
 
-bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3, cv::Mat &R,cv::Mat &t) {
-	if (points2.size() != points3.size()) {
-		std::cout << "[Frame::RecoverPose] correspondences error " << std::endl;
-		return false;
+bool Frame::RecoverPoseWithcvPnp(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t) {
+	std::vector<cv::Point3f> points3;
+	std::vector<cv::Point2f> points2;
+	points3.reserve(inliers_matches.size());
+	points2.reserve(inliers_matches.size());
+	for (auto it = inliers_matches.begin(); it != inliers_matches.end(); ++it) {
+		points3.push_back(Pdouble2cv(p_frame_ref->map_points[it->first]->point));
+		points2.push_back(left_key_points[it->second].pt);
 	}
 	cv::Mat Rvec(3,1,CV_32F),mask;
 	// R t: brings points from the model coordinate system to the camera coordinate system
@@ -263,11 +248,20 @@ bool Frame::RecoverPose(const std::vector<cv::Point2f> &points2, const std::vect
 }
 
 
-bool Frame::RecoverPoseWithPnpSolver(const std::vector<cv::Point2f> &points2, const std::vector<cv::Point3f> &points3,
-	const std::vector<MapPoint::Ptr> &mp_p3ds, cv::Mat &R, cv::Mat &t) {
+bool Frame::RecoverPoseWithPnpSolver(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t) {
+	std::vector<MapPoint::Ptr> mp_p3ds;
+	mp_p3ds.reserve(inliers_matches.size());
+	std::vector<cv::Point2f> points2;
+	points2.reserve(inliers_matches.size());
+	std::vector<cv::Point3f> points3;
+	for (auto it = inliers_matches.begin(); it != inliers_matches.end(); ++it) {
+		mp_p3ds.push_back(p_frame_ref->map_points[it->first]);
+		points2.push_back(left_key_points[it->second].pt);
+		points3.push_back(Pdouble2cv(p_frame_ref->map_points[it->first]->point));
+	}
 	cv::Mat Rvec(3, 1, CV_32F);
 	PnpSolver pnp_solver;
-	pnp_solver.Solve(points2, mp_p3ds, Rvec, t);
+	pnp_solver.Solve(mp_p3ds,points2, Rvec,t);
 	cv::Rodrigues(Rvec, R);
 //	std::cout << "[Frame::RecoverPoseWithPnpSolver] R: " << R << std::endl << "t: " << t << std::endl;
 #ifdef USE_PROJECT_ERROR
@@ -279,6 +273,34 @@ bool Frame::RecoverPoseWithPnpSolver(const std::vector<cv::Point2f> &points2, co
 		pro_error += (fabs(error.x) + fabs(error.y));
 	}
 	std::cout << "[Frame::RecoverPoseWithPnpSolver] pro_error: " << pro_error / points2.size() << std::endl;
+#endif
+	return true;
+}
+
+bool Frame::RecoverPoseWithStereoMatchesPnp(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t) {
+	std::vector<MapPoint::Ptr> mp_p3ds;
+	mp_p3ds.reserve(inliers_matches.size());
+	MatchPoints stereo_points;
+	stereo_points.reserve(inliers_matches.size());
+	std::vector<cv::Point3f> points3;
+	for (auto it = inliers_matches.begin(); it != inliers_matches.end(); ++it) {
+		mp_p3ds.push_back(p_frame_ref->map_points[it->first]);
+		stereo_points.push_back(match_points[it->second]);
+		points3.push_back(Pdouble2cv(p_frame_ref->map_points[it->first]->point));
+	}
+	cv::Mat Rvec(3, 1, CV_32F);
+	StereoPnpSolver pnp_solver;
+	pnp_solver.Solve(mp_p3ds, stereo_points, Rvec, t);
+	cv::Rodrigues(Rvec, R);
+	//	std::cout << "[Frame::RecoverPoseWithPnpSolver] R: " << R << std::endl << "t: " << t << std::endl;
+#ifdef USE_PROJECT_ERROR
+	std::vector<cv::Point2f> pro_points;
+	//cv::projectPoints(points3, Rvec, t, Common::K, cv::Mat(), pro_points);
+	float pro_error = 0;
+	for (size_t i = 0; i < inliers_matches.size(); ++i) {
+		;
+	}
+	std::cout << "[Frame::RecoverPoseWithPnpSolver] pro_error: " << pro_error / inliers_matches.size() << std::endl;
 #endif
 	return true;
 }

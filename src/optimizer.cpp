@@ -90,7 +90,7 @@ namespace VISG {
 		return project_error / matches.size();
 	}
 
-	void PnpSolver::Solve(const std::vector<cv::Point2f>&points2, const std::vector<MapPoint::Ptr>&points3, cv::Mat &R, cv::Mat&t) {
+	void PnpSolver::Solve(const std::vector<MapPoint::Ptr>&points3, const std::vector<cv::Point2f>&points2, cv::Mat &R, cv::Mat&t){
 		double *pose = new double[6]{0};
 		std::cout << std::endl;
 		ceres::LossFunction* loss_function = new ceres::HuberLoss(4);
@@ -125,6 +125,38 @@ namespace VISG {
 		t.at<float>(2, 0) = pose[5];
 		delete[]pose;
 		//delete[]p3d;
+	}
+
+	void StereoPnpSolver::Solve(const std::vector<MapPoint::Ptr>&points3, const MatchPoints &stereo_points, cv::Mat &R, cv::Mat&t) {
+		double *pose = new double[6]{ 0 };
+		std::cout << std::endl;
+		ceres::LossFunction* loss_function = new ceres::HuberLoss(4);
+		//double *p3d = new double[3 * points3.size()];
+		for (size_t i = 0; i < stereo_points.size(); ++i) {
+			ceres::CostFunction *cost_function = StereoProjectionError::Create(stereo_points[i].x(),
+				stereo_points[i].y(), stereo_points[i].z(), points3[i]->point);// p3d + 3 * i);
+			problem_.AddResidualBlock(cost_function, loss_function, pose);
+		}
+		ceres::Solver::Options options;
+		options.linear_solver_type = ceres::DENSE_SCHUR;
+		options.minimizer_progress_to_stdout = true;
+		ceres::Solver::Summary summary;
+		ceres::Solve(options, &problem_, &summary);
+		//std::cout << summary.FullReport() << std::endl;
+
+		std::cout << std::endl << "[PnpSolver::Solve] pose after:";
+		for (size_t i = 0; i < 6; ++i) {
+			std::cout << pose[i] << " ";
+		}
+		std::cout << std::endl;
+		R.at<float>(0, 0) = pose[0];
+		R.at<float>(1, 0) = pose[1];
+		R.at<float>(2, 0) = pose[2];
+		t.at<float>(0, 0) = pose[3];
+		t.at<float>(1, 0) = pose[4];
+		t.at<float>(2, 0) = pose[5];
+		delete[]pose;
+	
 	}
 
 	void BASolver::Solve(std::vector<Frame::Ptr> &local_frames, Frame::Ptr p_frame_ref) {
@@ -218,6 +250,7 @@ namespace VISG {
 		for (; mp_it != p_frame_ref->map_points.end(); ++mp_it) {
 			if (!(*mp_it))
 				continue;
+			std::cout << "[BAOnlyPointsSolver::Solve] observed size: " << (*mp_it)->observed.size() << std::endl;
 			for (MapPoint::Observed::iterator ob_it = (*mp_it)->observed.begin(); ob_it != (*mp_it)->observed.end(); ++ob_it) {
 				const size_t idx = ob_it->first - id_0;
 				const double x = static_cast<double>(local_frames[idx]->left_key_points[ob_it->second].pt.x);
