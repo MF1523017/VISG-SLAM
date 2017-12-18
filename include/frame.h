@@ -23,7 +23,7 @@ public:
 	void SetPose(const Eigen::Matrix3f &R, const Eigen::Vector3f &t);
 	void ExtractFeatures(const cv::Mat&left, const cv::Mat&right);
 	void ExtractORB(const cv::Mat&img, bool is_left);
-	void Match(KeyPoints &left_key_points,const cv::Mat &left_descriptors,KeyPoints &right_key_points,const cv::Mat&right_descriptors);
+	
 	size_t StereoMatch();
 	bool RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches&inliers_matches);
 	bool RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches);
@@ -45,9 +45,8 @@ public:
 	Eigen::Vector3f rtc;
 	Eigen::Matrix4f wTc;// pose
 	std::vector<bool> inliers;
+
 private:
-	
-	void Hist(KeyPoints &key_points, std::vector<std::vector<size_t>> &hist);
 	void Reset();
 	bool RecoverPose(const std::vector<cv::Point2f> &points1, const std::vector<cv::Point2f> &points2, const MyMatches &matches,
 		MyMatches &inliers_matches,cv::Mat &R,cv::Mat &t);

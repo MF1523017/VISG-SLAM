@@ -26,59 +26,11 @@ void Frame::ExtractORB(const cv::Mat&img, bool is_left) {
 }
 
 
-void Frame::Match(KeyPoints &left_key_points, const cv::Mat &left_descriptors, KeyPoints &right_key_points, const cv::Mat&right_descriptors) {
-	std::vector<std::vector<size_t>> left_hist,right_hist;
-	match_points.clear();
-	Hist(left_key_points, left_hist);
-	Hist(right_key_points, right_hist);
-	int pixel_diff = Common::Width / 10;
-	std::cout << "[Frame Match] pixel_diff: " << pixel_diff << std::endl;
-	for (size_t i = 0; i < Common::HistBin; ++i) {
-		if (left_hist[i].empty()|| right_hist[i].empty())
-			continue;
-		for (size_t j = 0; j < left_hist[i].size(); ++j) {
-			size_t l_idx = left_hist[i][j];
-			cv::Point2f &lp = left_key_points[l_idx].pt;
-			int best_dist = 0x7fffffff;
-			int best_r_idx = -1;
-			cv::Point2f match_rp;
-			for (size_t k = 0; k < right_hist[i].size(); ++k) {
-				size_t r_idx = right_hist[i][k];
-				cv::Point2f &rp = right_key_points[r_idx].pt;
-				if (rp.x + 1 < 1e-3 || lp.x < rp.x || lp.x - rp.x > pixel_diff )
-					continue;
-				cv::Mat &ld = left_descriptors.row(l_idx);
-				cv::Mat &rd = right_descriptors.row(r_idx);
-				const int dist = Matcher::DescriptorDistance(ld, rd);
-				if (dist < best_dist) {
-					best_dist = dist;
-					match_rp = rp;
-					best_r_idx = r_idx;
-				}
-			}
-			if (best_r_idx != -1) {
-				std::cout << "[Frame Match] best_dist: " << best_dist << std::endl;
-				match_points.push_back(Eigen::Vector3f(lp.x, lp.y, right_key_points[best_r_idx].pt.x));
-				right_key_points[best_r_idx].pt.x = -1;
-				std::cout << "[Frame Match] match_points: " << match_points.back() << std::endl;
-			}
-			
-		}
-	}
-}
 
 bool Frame::IsKeyFrame(MyMatches &matches) {
 	return (matches.size() < KeyFrame::keys_th_tracked);
 }
-void Frame::Hist(KeyPoints &key_points, std::vector<std::vector<size_t>> &hist) {
-	size_t step = Common::Height / Common::HistBin + 1;
-	hist.resize(Common::HistBin);
-	size_t point_size = key_points.size();
-	for (size_t i = 0; i < point_size; ++i) {
-		size_t idx = floor(key_points[i].pt.y / step);
-		hist[idx].push_back(i);
-	}
-}
+
 
 size_t Frame::StereoMatch() {
 	size_t matches_counter = 0;
@@ -127,7 +79,6 @@ size_t Frame::StereoMatch() {
 				continue;
 			const double x = (lp.x - Common::Cx)*z*Common::FxInv;
 			const double y = (lp.y - Common::Cy)*z*Common::FyInv;
-			//Eigen::Vector3f p3Dc(x, y, z);
 			map_points[i] = std::make_shared<MapPoint>(x,y,z);
 			
 			inliers[i] = true;
