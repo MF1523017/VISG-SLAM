@@ -30,6 +30,8 @@ namespace VISG {
 	void HPose2Rt(const Eigen::Matrix4f &T, Eigen::Matrix3f &R, Eigen::Vector3f &t);
 	
 	void loadImage(const std::string & file_dir, std::vector<std::string> &images);
+	void SaveXYZ(const std::string & file_name, const cv::Mat& mat,const cv::Mat &img);
+
 }
 
 #endif /*__UTILS_HPP__*/

@@ -6,6 +6,7 @@
 #include "camera.h"
 #include "visg_slam.h"
 #include "timer.h"
+#include "stereo.h"
 #include <thread>
 using namespace VISG;
 
@@ -89,4 +90,19 @@ void test_offline() {
 		visg.Run(left, right);
 		std::cout << "Time elapsed(ms): " << timer.ElapsedMS() << std::endl;
 	}
+}
+
+void test_stereo(){
+	VisgSlamOffline visg;
+	Stereo stereo;
+	std::string points_file("H:\\dataset\\20171214_1\\20171214\\stereo\\points.obj");
+	std::string left_file("H:\\dataset\\20171214_1\\20171214\\cam0\\data\\870747931678.jpg");
+	std::string right_file("H:\\dataset\\20171214_1\\20171214\\cam1\\data\\870747931678.jpg");
+	/*std::string left_file("H:\\opencv\\sources\\samples\\data\\aloeL.jpg");
+	std::string right_file("H:\\opencv\\sources\\samples\\data\\aloeR.jpg");*/
+	cv::Mat left = cv::imread(left_file,-1);
+	cv::Mat right = cv::imread(right_file,-1);
+	cv::Mat disp,points3;
+	stereo.Compute(left, right, disp,points3);
+	SaveXYZ(points_file.c_str(), points3,left);
 }

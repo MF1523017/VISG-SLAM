@@ -90,7 +90,8 @@ namespace VISG {
 		Common::FyInv = 1.0 / Common::Fy;
 #else
 		// vga mode
-		
+		std::cout << "[VisgSlamOffline] channel before K: " << Common::K.channels() <<" R: "
+			<< Common::lRr.channels() << " t: "<< Common::ltr.channels() << std::endl;
 		Common::Height = 376;
 		Common::Width = 672;
 		Common::Fx = 345.766;
@@ -103,6 +104,8 @@ namespace VISG {
 		Common::ltr.at<float>(0, 0) = 0.12;
 		Common::FxInv = 1.0 / Common::Fx;
 		Common::FyInv = 1.0 / Common::Fy;
+		std::cout << "[VisgSlamOffline] channel after K: " << Common::K.channels() << " R: "
+			<< Common::lRr.channels() << " t: " << Common::ltr.channels() << std::endl;
 #endif
 	}
 	void VisgSlamOffline::Run(cv::Mat &left, cv::Mat &right) {

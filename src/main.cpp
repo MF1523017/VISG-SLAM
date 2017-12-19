@@ -15,7 +15,8 @@ int main(int argc, char **argv) {
 	}
 	std::cout << "usage: " << argv[0] << " (for running stereo slam) or " << argv[0] << " data_dir (for recording data)" << std::endl;
 #else
-	test_offline();
+	//test_offline();
+	test_stereo();
 #endif
     return 0;
 }

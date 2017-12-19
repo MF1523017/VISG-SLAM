@@ -134,4 +134,20 @@ namespace VISG {
 		}
 		read_images.close();
 	}
+
+	void SaveXYZ(const std::string & file_name, const cv::Mat& mat, const cv::Mat &img) {
+		const double max_z = 20;
+		std::ofstream of(file_name);
+		for (int y = 0; y < mat.rows; y++){
+			for (int x = 0; x < mat.cols; x++){
+				cv::Vec3f point = mat.at<cv::Vec3f>(y, x);
+				double dis2 = point.dot(point);
+				cv::Vec3b color = img.at<cv::Vec3b>(y, x);
+				if (dis2 > 0.09||fabs(point[2] - max_z) < FLT_EPSILON || fabs(point[2]) > max_z) continue;
+				of <<"v " <<point[0] << " " << point[1] << " " << point[2] << " "<< 
+					(int)color[0] << " " << (int)color[1] << " " << (int)color[2] <<std::endl;;
+			}
+		}
+		of.close();
+	}
 }
