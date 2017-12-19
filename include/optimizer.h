@@ -69,8 +69,8 @@ namespace VISG {
 			T predicted_y = fy * yp + cy; 
 			
 			// The error is the difference between the predicted and observed position.
-			residuals[0] = predicted_x - observed_x;
-			residuals[1] = predicted_y - observed_y;
+			residuals[0] = predicted_x - static_cast<T>(observed_x);
+			residuals[1] = predicted_y - static_cast<T>(observed_y);
 			return true;
 		}
 
@@ -144,9 +144,9 @@ namespace VISG {
 			T predicted_rx = fx * ((p[0] - baseline) / p[2]) + cx;
 
 			// The error is the difference between the predicted and observed position.
-			residuals[0] = predicted_x - observed_x;
-			residuals[1] = predicted_y - observed_y;
-			residuals[2] = predicted_rx - observed_rx;
+			residuals[0] = predicted_x - static_cast<T>(observed_x);
+			residuals[1] = predicted_y - static_cast<T>(observed_y);
+			residuals[2] = predicted_rx - static_cast<T>(observed_rx);
 			return true;
 		}
 
@@ -216,8 +216,8 @@ namespace VISG {
 			T predicted_y = fy * yp + cy;
 
 			// The error is the difference between the predicted and observed position.
-			residuals[0] = predicted_x - observed_x;
-			residuals[1] = predicted_y - observed_y;
+			residuals[0] = predicted_x - static_cast<T>(observed_x);
+			residuals[1] = predicted_y - static_cast<T>(observed_y);
 			return true;
 		}
 
@@ -284,8 +284,8 @@ namespace VISG {
 			T predicted_y = fy * yp + cy;
 
 			// The error is the difference between the predicted and observed position.
-			residuals[0] = predicted_x - observed_x;
-			residuals[1] = predicted_y - observed_y;
+			residuals[0] = predicted_x - static_cast<T>(observed_x);
+			residuals[1] = predicted_y - static_cast<T>(observed_y);
 			return true;
 		}
 

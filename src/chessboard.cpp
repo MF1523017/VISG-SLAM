@@ -1,7 +1,6 @@
 #include "chessboard.h"
 #include "utils.hpp"
-#include "draw_board.h"
-#include "optimizer.h"
+
 namespace VISG {
 	Chessboard::Chessboard(size_t row, size_t col, float grid_length):is_first_frame_(true),grid_length_(grid_length) {
 		pattern_size_.height = row;
