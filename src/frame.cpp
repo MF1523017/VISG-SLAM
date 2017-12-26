@@ -32,7 +32,7 @@ bool Frame::IsKeyFrame(MyMatches &matches) {
 }
 
 
-size_t Frame::StereoMatch() {
+size_t Frame::StereoMatch(const cv::Mat &left) {
 	size_t matches_counter = 0;
 	Reset();
 	// histed right image key points by y
@@ -79,7 +79,13 @@ size_t Frame::StereoMatch() {
 				continue;
 			const double x = (lp.x - Common::Cx)*z*Common::FxInv;
 			const double y = (lp.y - Common::Cy)*z*Common::FyInv;
-			map_points[i] = std::make_shared<MapPoint>(x,y,z);
+			const int u = floor(lp.x);
+			const int v = floor(lp.y);
+			//std::cout << "[Frame::StereoMatch] u: " << u << ", v: " << v << std::endl;
+			map_points[i] = std::make_shared<MapPoint>(x,y,z, 
+				left.at<cv::Vec3b>(v, u)[0], 
+				left.at<cv::Vec3b>(v, u)[1],
+				left.at<cv::Vec3b>(v, u)[2]);
 			
 			inliers[i] = true;
 			++matches_counter;
@@ -202,8 +208,8 @@ bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 		return false;
 	}*/
 	
-	//ret = RecoverPoseWithPnpSolver(p_frame_ref, inliers_matches, R, t);
-	ret = RecoverPoseWithStereoMatchesPnp(p_frame_ref, inliers_matches, R, t);
+	ret = RecoverPoseWithPnpSolver(p_frame_ref, inliers_matches, R, t);
+	//ret = RecoverPoseWithStereoMatchesPnp(p_frame_ref, inliers_matches, R, t);
 	Eigen::Matrix3f cRr = Rcv2Eigen(R);//ref to cur
 	Eigen::Vector3f ctr = Tcv2Eigen(t);
 	Eigen::Matrix4f rTc = HPose(cRr, ctr).inverse();

@@ -7,7 +7,11 @@
 #include "visg_slam.h"
 #include "timer.h"
 #include "stereo.h"
+#include "thread_pool.h"
 #include <thread>
+
+#define SAVE_POINTS
+
 using namespace VISG;
 
 void test_Camera(){
@@ -68,12 +72,14 @@ void test_VisgSlamOffline(char **argv){
 void test_offline() {
 	VisgSlamOffline visg;
 	std::vector<std::string> images;
+
 #ifdef HDMODE
 	const std::string data_dir("H:\\dataset\\20171207_demo\\20171207");
 	//const std::string data_dir("H:\\dataset\\20171120\\20171120");
 #else
 	
 	const std::string data_dir("H:\\dataset\\20171214_1\\20171214");
+	
 #endif
 	loadImage(data_dir, images);
 	Timer timer;
@@ -88,7 +94,13 @@ void test_offline() {
 			return;
 		}
 		visg.Run(left, right);
-		std::cout << "Time elapsed(ms): " << timer.ElapsedMS() << std::endl;
+#ifdef SAVE_POINTS
+		const size_t pos = images[i].find('.');
+		const std::string points_file(data_dir + "\\obj\\" + images[i].substr(0, pos) + ".obj");
+		std::cout << "[test_offline] points_file: " << points_file << std::endl;
+		visg.SaveMapPoints(points_file);
+#endif
+		std::cout << "[test_offline] Time elapsed(ms): " << timer.ElapsedMS() << std::endl;
 	}
 }
 
@@ -105,4 +117,43 @@ void test_stereo(){
 	cv::Mat disp,points3;
 	stereo.Compute(left, right, disp,points3);
 	SaveXYZ(points_file.c_str(), points3,left);
+}
+
+void test_thread_pool() {
+	std::mutex mtx;
+	try
+	{
+		ThreadPool tp;
+		std::vector<std::future<int>> v;
+		std::vector<std::future<void>> v1;
+		for (int i = 0; i <= 10; ++i)
+		{
+			auto ans = tp.Add([](int answer) { return answer; }, i);
+			v.push_back(std::move(ans));
+		}
+		for (int i = 0; i <= 5; ++i)
+		{
+			auto ans = tp.Add([&mtx](const std::string& str1, const std::string& str2)
+			{
+				std::lock_guard<std::mutex> lg(mtx);
+				std::cout << (str1 + str2) << std::endl;
+				return;
+			}, "hello ", "world");
+			v1.push_back(std::move(ans));
+		}
+		for (size_t i = 0; i < v.size(); ++i)
+		{
+			std::lock_guard<std::mutex> lg(mtx);
+			std::cout << v[i].get() << std::endl;
+		}
+		for (size_t i = 0; i < v1.size(); ++i)
+		{
+			v1[i].get();
+		}
+	}
+	catch (std::exception& e)
+	{
+		std::cout << e.what() << std::endl;
+	}
+
 }

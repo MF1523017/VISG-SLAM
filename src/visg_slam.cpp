@@ -124,4 +124,16 @@ namespace VISG {
 #endif
 		cv::waitKey(1);
 	}
+
+	void VisgSlamOffline::SaveMapPoints(const std::string &file_name) {
+		std::vector<Eigen::Vector3f> map_points;
+		std::vector<Eigen::Vector3i> colors;
+		tracker_->GetMapPoints(map_points, colors);
+		std::ofstream out_file(file_name);
+		for (size_t i = 0; i < map_points.size(); ++i) {
+			out_file << "v " << map_points[i].x() << " " << map_points[i].y() << " " << map_points[i].z() << " "
+				<< colors[i].x() << " " << colors[i].y() << " " << colors[i].z() << std::endl;
+		}
+		out_file.close();
+	}
 }

@@ -20,7 +20,7 @@ class VisgSlamOffline {
 public:
 	VisgSlamOffline();
 	void Run(cv::Mat &left, cv::Mat &right);
-	
+	void SaveMapPoints(const std::string &file_name);
 private:
 	TrackerInterface::Ptr tracker_;
 };

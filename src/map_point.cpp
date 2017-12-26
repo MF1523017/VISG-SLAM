@@ -1,10 +1,16 @@
 #include"map_point.h"
 namespace VISG {
-	MapPoint::MapPoint(double x, double y, double z) {
+	MapPoint::MapPoint(double x, double y, double z, unsigned char r, unsigned char g, unsigned char b) {
 		point = new double[3];
 		point[0] = x;
 		point[1] = y;
 		point[2] = z;
+
+		color = new unsigned char[3];
+		color[0] = r;
+		color[1] = g;
+		color[2] = b;
+
 		observed.reserve(Common::EveryNFrames);
 	}
 
@@ -19,12 +25,19 @@ namespace VISG {
 			Clear();
 			return *this;
 		}
-		double * tmp_point = new double[3];
-		tmp_point[0] = rhs.point[0];
-		tmp_point[1] = rhs.point[1];
-		tmp_point[2] = rhs.point[2];
-		delete[]point;
-		point = tmp_point;
+		if (!point) {
+			point = new double[3];
+			color = new unsigned char[3];
+		}
+		
+		point[0] = rhs.point[0];
+		point[1] = rhs.point[1];
+		point[2] = rhs.point[2];
+
+		color[0] = rhs.color[0];
+		color[1] = rhs.color[1];
+		color[2] = rhs.color[2];
+
 		observed = rhs.observed;
 		return *this;
 	}

@@ -35,7 +35,7 @@ namespace VISG {
 	}
 
 	bool OrbTracker::Init(cv::Mat &left, cv::Mat &right) {
-		size_t ret = p_frame_cur_->StereoMatch();
+		size_t ret = p_frame_cur_->StereoMatch(left);
 		std::cout << "[OrbTracker::Init] init .....: " << ret << std::endl;
 		if (ret > 60) {
 			std::cout << "[OrbTracker::Init] mathches size: " << ret << std::endl;
@@ -59,7 +59,7 @@ namespace VISG {
 	bool OrbTracker::Track(cv::Mat &left, cv::Mat &right){
 		// TODO not defined
 	//	std::cout << "[OrbTracker Track] p_frame_ref_ status: before " << p_frame_ref_.use_count() << std::endl;
-		p_frame_cur_->StereoMatch();
+		p_frame_cur_->StereoMatch(left);
 		MyMatches my_matches;
 
 		// recover pose using  2d to 2d corrspondence 
@@ -78,7 +78,7 @@ namespace VISG {
 		}
 		p_frame_last_ = p_frame_cur_;
 		const size_t diff_id = p_frame_cur_->id() - p_frame_ref_->id()-1;
-		local_frames_[diff_id] = p_frame_cur_;
+		//local_frames_[diff_id] = p_frame_cur_;
 		motion_counter_ = 0;
 		cv::Mat tmp(left.size(), left.type(),cv::Scalar::all(0)), left1(left.size(),left.type(), cv::Scalar::all(0));
 #ifdef USE_PROJECT_ERROR
@@ -104,13 +104,13 @@ namespace VISG {
 			/*BAOnlyPointsSolver ba_only_points_solver;
 			ba_only_points_solver.Solve(local_frames_, p_frame_ref_);
 			BAOnlyPosesSolver ba_only_pose_solver;
-			ba_only_pose_solver.Solve(local_frames_, p_frame_ref_);*/
+			ba_only_pose_solver.Solve(local_frames_, p_frame_ref_);
 			std::vector<cv::Point2f> pro_points;
 			float e = Optimizer::ProjectPointsRefTrack2D3D(p_frame_ref_->map_points,
 				p_frame_cur_->left_key_points, my_matches, p_frame_cur_->rRc, p_frame_cur_->rtc, pro_points);
-			std::cout << "[OrbTracker Track] Project error after BA: " << e << std::endl;
-			local_frames_.clear();
-			local_frames_.resize(Common::EveryNFrames, nullptr);
+			std::cout << "[OrbTracker Track] Project error after BA: " << e << std::endl;*/
+			/*local_frames_.clear();
+			local_frames_.resize(Common::EveryNFrames, nullptr);*/
 			
 			p_frame_ref_ = p_frame_cur_;
 			ref_image = left.clone();
@@ -120,9 +120,17 @@ namespace VISG {
 		return true;
 	}
 
-	std::vector<cv::Point3f> OrbTracker::GetMapPoints()const {
+	void OrbTracker::GetMapPoints(std::vector<Eigen::Vector3f> &map_points, std::vector<Eigen::Vector3i> &colors) {
 		// TODO not defined
-		return std::vector<cv::Point3f>();
+		p_frame_cur_->GetwMapPoints(map_points);
+		colors.clear();
+		colors.reserve(map_points.size());
+		for (const MapPoint::Ptr p : p_frame_cur_->map_points) {
+			if (!p)
+				continue;
+			colors.push_back(Eigen::Vector3i(p->color[0], p->color[1], p->color[2]));
+		}
+		
 	}
 
 	void OrbTracker::Reboot() {

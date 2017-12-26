@@ -24,7 +24,7 @@ public:
 	void ExtractFeatures(const cv::Mat&left, const cv::Mat&right);
 	void ExtractORB(const cv::Mat&img, bool is_left);
 	
-	size_t StereoMatch();
+	size_t StereoMatch(const cv::Mat &left);
 	bool RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches&inliers_matches);
 	bool RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches);
 	void MotionTrack(Frame::Ptr p_frame_ref);

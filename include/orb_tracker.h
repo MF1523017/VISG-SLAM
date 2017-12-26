@@ -13,7 +13,7 @@ public:
 	virtual bool Track(cv::Mat &left, cv::Mat &right);
 	virtual void Reboot();
 	virtual int GetPose(Eigen::Matrix3f& R, Eigen::Vector3f &t) const;
-	virtual std::vector<cv::Point3f> GetMapPoints()const;
+	virtual void GetMapPoints(std::vector<Eigen::Vector3f> &map_points, std::vector<Eigen::Vector3i> &colors);
 private:
 	Frame::Ptr p_frame_cur_;
 	Frame::Ptr p_frame_last_;

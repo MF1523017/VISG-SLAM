@@ -10,4 +10,6 @@ void test_VisgSlamOffline(char **argv);
 void test_offline();
 
 void test_stereo();
+
+void test_thread_pool();
 #endif // ! TEST_H

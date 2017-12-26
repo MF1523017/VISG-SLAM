@@ -18,7 +18,7 @@ public:
 	virtual bool Track(cv::Mat &left, cv::Mat &right) = 0;
 	virtual void Reboot() = 0;
 	virtual int GetPose(Eigen::Matrix3f& R, Eigen::Vector3f &t) const = 0;
-	virtual std::vector<cv::Point3f> GetMapPoints()const = 0;
+	virtual void GetMapPoints(std::vector<Eigen::Vector3f> &map_points,std::vector<Eigen::Vector3i> &colors)= 0;
 	TrackingState GetTrackingState()const { return state_; }
 protected:
 	TrackingState state_;

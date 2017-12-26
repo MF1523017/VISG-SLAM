@@ -17,5 +17,5 @@ namespace VISG {
 	size_t Common::FeaturesNum = 500;
 	float Common::ScaleFactor = 1.2;
 	size_t Common::Levels = 2;
-	size_t Common::EveryNFrames = 4;
+	size_t Common::EveryNFrames = 3;
 }
