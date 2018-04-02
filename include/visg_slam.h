@@ -3,7 +3,7 @@
 #include "camera.h"
 #include "orb_tracker.h"
 #include "chessboard.h"
-//#define HDMODE
+
 namespace VISG {
 class VisgSlam {
 public:

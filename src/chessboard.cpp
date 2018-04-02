@@ -74,8 +74,8 @@ namespace VISG {
 			char text_translation[128];
 			snprintf(text_rotation, 128, "rotation: %3.3f, %3.3f, %3.3f", ypr.x(), ypr.y(), ypr.z());
 			snprintf(text_translation, 128, "translation: %3.3f, %3.3f, %3.3f", t.x(), t.y(), t.z());
-			cv::putText(img, text_rotation, cv::Point2i(100, 20), 0, 0.5, cv::Scalar(255, 0, 255));
-			cv::putText(img, text_translation, cv::Point2i(100, 50), 0, 0.5, cv::Scalar(255, 0, 255));
+			cv::putText(gray, text_rotation, cv::Point2i(100, 20), 0, 0.5, cv::Scalar(255, 0, 255));
+			cv::putText(gray, text_translation, cv::Point2i(100, 50), 0, 0.5, cv::Scalar(255, 0, 255));
 			cv::drawChessboardCorners(img, pattern_size_, corners, patternfound);
 			cv::imshow("draw corners", img);
 		}

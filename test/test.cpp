@@ -73,14 +73,15 @@ void test_offline() {
 	VisgSlamOffline visg;
 	std::vector<std::string> images;
 
-#ifdef HDMODE
-	const std::string data_dir("H:\\dataset\\20171207_demo\\20171207");
+	//720 mode
+	//const std::string data_dir("H:\\dataset\\20171207_demo\\20171207");
 	//const std::string data_dir("H:\\dataset\\20171120\\20171120");
-#else
-	
+
+	// vga mode
 	const std::string data_dir("H:\\dataset\\20171214_1\\20171214");
 	
-#endif
+	//chessboard
+	//const std::string data_dir("H:\\dataset\\20171207_chessboard\\20171207");
 	loadImage(data_dir, images);
 	Timer timer;
 	for (size_t i = 0; i < images.size(); ++i) {

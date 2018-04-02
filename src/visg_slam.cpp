@@ -1,7 +1,7 @@
 #include "visg_slam.h"
 #include "draw_board.h"
 //#define USE_CHESSBOARD
-
+//#define HDMODE
 namespace VISG {
 	VisgSlam::VisgSlam():tracker_(new OrbTracker) {
 		zed_.Open(3,100);
@@ -88,10 +88,11 @@ namespace VISG {
 		Common::BaseLine = 0.12;
 		Common::FxInv = 1.0 / Common::Fx;
 		Common::FyInv = 1.0 / Common::Fy;
+		std::cout << "[VisgSlamOffline] K: " << Common::K << " R: "
+			<< Common::lRr << " t: " << Common::ltr << std::endl;
 #else
 		// vga mode
-		std::cout << "[VisgSlamOffline] channel before K: " << Common::K.channels() <<" R: "
-			<< Common::lRr.channels() << " t: "<< Common::ltr.channels() << std::endl;
+		
 		Common::Height = 376;
 		Common::Width = 672;
 		Common::Fx = 345.766;
@@ -104,24 +105,24 @@ namespace VISG {
 		Common::ltr.at<float>(0, 0) = 0.12;
 		Common::FxInv = 1.0 / Common::Fx;
 		Common::FyInv = 1.0 / Common::Fy;
-		std::cout << "[VisgSlamOffline] channel after K: " << Common::K.channels() << " R: "
-			<< Common::lRr.channels() << " t: " << Common::ltr.channels() << std::endl;
+		std::cout << "[VisgSlamOffline]   K: " << Common::K << " R: "
+			<< Common::lRr << " t: " << Common::ltr << std::endl;
 #endif
 	}
 	void VisgSlamOffline::Run(cv::Mat &left, cv::Mat &right) {
-		cv::Mat left_, right_;
-		/*cv::cvtColor(left, left_, CV_RGB2GRAY);
-		cv::cvtColor(left, right_, CV_RGB2GRAY);
-		(*tracker_)(left_, right_);*/
-		(*tracker_)(left, right);
+		cv::Mat left_, right_;		
 #ifdef USE_CHESSBOARD	
 		Eigen::Matrix3f R_truth,R;
 		Eigen::Vector3f t_truth,t;
 		auto ret = Chessboard::handle(7, 6, 0.025)->GetPose(left, Common::K, R_truth, t_truth);
 		//std::cout << "[VisgSlamOffline Run] chess get pose: " << ret << std::endl;
+		(*tracker_)(left, right);
 		tracker_->GetPose(R, t);
-		//std::cout << "[VisgSlamOffline Run] t error: " << (t_truth - t).transpose() << std::endl;
+		std::cout << "[VisgSlamOffline Run] t error: " << (t_truth - t).transpose() << std::endl;
+#else
+		(*tracker_)(left, right);
 #endif
+
 		cv::waitKey(1);
 	}
 
