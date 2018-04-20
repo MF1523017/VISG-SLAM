@@ -123,7 +123,7 @@ namespace VISG {
 		(*tracker_)(left, right);
 #endif
 
-		cv::waitKey(1);
+		cv::waitKey();
 	}
 
 	void VisgSlamOffline::SaveMapPoints(const std::string &file_name) {

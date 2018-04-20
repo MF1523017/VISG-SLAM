@@ -12,4 +12,6 @@ void test_offline();
 void test_stereo();
 
 void test_thread_pool();
+
+void test_loop();
 #endif // ! TEST_H

@@ -202,12 +202,12 @@ bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 	}
 	cv::Mat R(3,3,CV_32F), t(3,1,CV_32F);
 	
-	/*ret = RecoverPoseWithcvPnp(p_frame_ref, inliers_matches, R, t);
-	if (!ret) {
-		std::cout << "[Frame::RefTrack2D3D]: RecoverPose error!" << std::endl;
-		return false;
-	}*/
-	
+	//ret = RecoverPoseWithcvPnp(p_frame_ref, inliers_matches, R, t);
+	//if (!ret) {
+	//	std::cout << "[Frame::RefTrack2D3D]: RecoverPose error!" << std::endl;
+	//	return false;
+	//}
+	//
 	ret = RecoverPoseWithPnpSolver(p_frame_ref, inliers_matches, R, t);
 	//ret = RecoverPoseWithStereoMatchesPnp(p_frame_ref, inliers_matches, R, t);
 	Eigen::Matrix3f cRr = Rcv2Eigen(R);//ref to cur
@@ -217,6 +217,10 @@ bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 	wTc = wTr * rTc;
 	HPose2Rt(wTc, wRc, wtc);
 	HPose2Rt(rTc, rRc, rtc);
+
+	std::cout << "[Frame::RefTrack2D3D] R£º" << std::endl
+		<< wRc << std::endl << "t:" << std::endl << wtc << std::endl;
+
 	return true;
 }
 
@@ -246,8 +250,7 @@ bool Frame::RecoverPoseWithcvPnp(Frame::Ptr p_frame_ref, MyMatches &inliers_matc
 		cv::Point2f error = points2[i] - pro_points[i];
 		pro_error += (fabs(error.x) + fabs(error.y));
 	}
-	std::cout << "[Frame::RecoverPose] pro_error: " << pro_error / points2.size() << std::endl;
-
+	std::cout << "[Frame::RecoverPoseWithcvPnp] project_error: " << pro_error / points2.size() << std::endl;
 #endif
 
 	return true;
@@ -265,11 +268,13 @@ bool Frame::RecoverPoseWithPnpSolver(Frame::Ptr p_frame_ref, MyMatches &inliers_
 		points2.push_back(left_key_points[it->second].pt);
 		points3.push_back(Pdouble2cv(p_frame_ref->map_points[it->first]->point));
 	}
+	
 	cv::Mat Rvec(3, 1, CV_32F);
 	PnpSolver pnp_solver;
 	pnp_solver.Solve(mp_p3ds,points2, Rvec,t);
 	cv::Rodrigues(Rvec, R);
 //	std::cout << "[Frame::RecoverPoseWithPnpSolver] R: " << R << std::endl << "t: " << t << std::endl;
+
 #ifdef USE_PROJECT_ERROR
 	std::vector<cv::Point2f> pro_points;
 	cv::projectPoints(points3, Rvec, t, Common::K, cv::Mat(), pro_points);
@@ -279,7 +284,9 @@ bool Frame::RecoverPoseWithPnpSolver(Frame::Ptr p_frame_ref, MyMatches &inliers_
 		pro_error += (fabs(error.x) + fabs(error.y));
 	}
 	std::cout << "[Frame::RecoverPoseWithPnpSolver] pro_error: " << pro_error / points2.size() << std::endl;
+
 #endif
+
 	return true;
 }
 
@@ -294,6 +301,7 @@ bool Frame::RecoverPoseWithStereoMatchesPnp(Frame::Ptr p_frame_ref, MyMatches &i
 		stereo_points.push_back(match_points[it->second]);
 		points3.push_back(Pdouble2cv(p_frame_ref->map_points[it->first]->point));
 	}
+
 	cv::Mat Rvec(3, 1, CV_32F);
 	StereoPnpSolver pnp_solver;
 	pnp_solver.Solve(mp_p3ds, stereo_points, Rvec, t);
@@ -306,6 +314,7 @@ bool Frame::RecoverPoseWithStereoMatchesPnp(Frame::Ptr p_frame_ref, MyMatches &i
 	for (size_t i = 0; i < inliers_matches.size(); ++i) {
 		;
 	}
+
 	std::cout << "[Frame::RecoverPoseWithPnpSolver] pro_error: " << pro_error / inliers_matches.size() << std::endl;
 #endif
 	return true;
@@ -340,6 +349,70 @@ void Frame::MotionTrack(Frame::Ptr p_frame_ref) {
 	HPose2Rt(wTc, wRc, wtc);
 }
 
+
+// icp recover pose
+
+bool Frame::RefTrack3D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
+	bool ret;
+	// get the matches
+	ret = FetchMatches(p_frame_ref, inliers_matches);
+	if (!ret) {
+		std::cout << "[Frame::RefTrack3D3D]: fetch match points error!" << std::endl;
+		return false;
+	}
+	std::vector<Eigen::Vector3d> pts1, pts2;
+	size_t N = inliers_matches.size();
+	pts1.reserve(N);
+	pts2.reserve(N);
+	Eigen::Vector3d pc1, pc2;// points cloud center
+
+	// get point cloud
+	for (size_t i = 0; i < N; ++i) {
+		const auto& query_idx = inliers_matches[i].first;
+		const auto& train_idx = inliers_matches[i].second;
+		const auto & mp1 = p_frame_ref->map_points[query_idx]->point;
+		const auto & mp2 = map_points[train_idx]->point;
+		Eigen::Vector3d p1(mp1[0],mp1[1], mp1[2]);
+		Eigen::Vector3d p2(mp2[0],mp2[1], mp2[2]);
+		pc1 += p1;
+		pc2 += p2;
+		pts1.push_back(p1);
+		pts2.push_back(p2);
+	}
+
+	pc1 /= N;
+	pc2 /= N;
+	// remove the center
+	for (size_t i = 0; i < N; ++i) {
+		pts1[i] -= pc1;
+		pts2[i] -= pc2;
+	}
+	//compute q1*qt^T
+
+	Eigen::Matrix3d W = Eigen::Matrix3d::Zero();
+	for (size_t i = 0; i < N; ++i) {
+		W += pts1[i] * pts2[i].transpose();
+	}
+
+	// SVD on W
+	Eigen::JacobiSVD<Eigen::Matrix3d> svd(W, Eigen::ComputeFullU | Eigen::ComputeFullV);
+	Eigen::Matrix3d U = svd.matrixU();
+	Eigen::Matrix3d V = svd.matrixV();
+
+	Eigen::Matrix3d R = U*(V.transpose());
+	Eigen::Vector3d t = pc1 - R * pc2;
+	
+	rRc = R.cast<float>();
+	rtc = t.cast<float>();
+	Eigen::Matrix4f rTc = HPose(rRc, rtc);
+	Eigen::Matrix4f wTr = p_frame_ref->wTc;
+	wTc = wTr * rTc;
+	HPose2Rt(wTc, wRc, wtc);
+
+	std::cout << "[Frame::RefTrack3D3D] R£º" << std::endl
+		<< wRc << std::endl << "t:" << std::endl << wtc << std::endl;
+	return true;
+}
 
 Frame::~Frame() {
 	left_descriptors.release();

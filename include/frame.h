@@ -27,6 +27,7 @@ public:
 	size_t StereoMatch(const cv::Mat &left);
 	bool RefTrack2D2D(Frame::Ptr p_frame_ref, MyMatches&inliers_matches);
 	bool RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches);
+	bool RefTrack3D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches);
 	void MotionTrack(Frame::Ptr p_frame_ref);
 	bool FetchMatches(Frame::Ptr p_frame_ref, MyMatches &inliers_matches);
 	bool IsKeyFrame(MyMatches &matches);

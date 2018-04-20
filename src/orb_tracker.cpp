@@ -61,13 +61,17 @@ namespace VISG {
 	//	std::cout << "[OrbTracker Track] p_frame_ref_ status: before " << p_frame_ref_.use_count() << std::endl;
 		p_frame_cur_->StereoMatch(left);
 		MyMatches my_matches;
-
+		bool ret;
 		// recover pose using  2d to 2d corrspondence 
 		/*auto ret = p_frame_cur_->RefTrack2D2D(p_frame_ref_, my_matches);
 		std::cout << "[OrbTracker Track] RefTrack2D2D ret: " << ret << " mathches size: " << my_matches.size() << std::endl;*/
+		
 		// recover pose using 2d to 3d corrspondence
-		bool ret;
-		ret = p_frame_cur_->RefTrack2D3D(p_frame_ref_, my_matches);
+		 ret = p_frame_cur_->RefTrack2D3D(p_frame_ref_, my_matches);
+		
+		// recover pose using 3d to 3d corrspondence (icp)
+		//ret = p_frame_cur_->RefTrack3D3D(p_frame_ref_, my_matches);
+	
 		if (!ret) {
 			p_frame_cur_->MotionTrack(p_frame_last_);
 			std::cout << "[OrbTracker Track] MotionTrack matches size: " << my_matches.size() << std::endl;
@@ -88,7 +92,10 @@ namespace VISG {
 		std::cout << "[OrbTracker Track] Project error: " << e << std::endl;
 		DrawBoard::handle().DrawProjectError(tmp, p_frame_cur_->left_key_points, my_matches, pro_points);
 #endif
+
+	// drawing
 #ifdef DRAW	
+		//DrawBoard::handle().DrawFeatures(left, p_frame_cur_->left_key_points,false);
 		cv::Mat ar(left.size(), left.type(), cv::Scalar::all(0)),left_ar(left.size(), left.type(), cv::Scalar::all(0));
 		std::vector<Eigen::Vector3f> map_points;
 		p_frame_ref_->GetwMapPoints(map_points);

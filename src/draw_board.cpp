@@ -4,9 +4,10 @@
 
 namespace VISG {
 void DrawBoard::DrawFeatures(cv::Mat &img, const KeyPoints &key_points, bool showing){
+	cv::namedWindow("key_points", 0);
 	cv::Mat img_key_points;
 	cv::drawKeypoints(img, key_points, img_key_points, cv::Scalar::all(-1), cv::DrawMatchesFlags::DEFAULT);
-	cv::imshow("black_board", img_key_points);
+	cv::imshow("key_points", img_key_points);
 	if(showing)
 		while (cv::waitKey() == 27);
 }

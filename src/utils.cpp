@@ -118,6 +118,7 @@ namespace VISG {
 	}
 
 	void loadImage(const std::string & file_dir, std::vector<std::string> &images) {
+		//const std::string data_file(file_dir + "\\cam0\\data.csv");
 		const std::string data_file(file_dir + "\\cam0\\data.csv");
 		std::ifstream read_images(data_file);
 		std::string line;

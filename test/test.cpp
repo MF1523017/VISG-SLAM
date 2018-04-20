@@ -8,6 +8,7 @@
 #include "timer.h"
 #include "stereo.h"
 #include "thread_pool.h"
+#include "loop.h"
 #include <thread>
 
 #define SAVE_POINTS
@@ -28,8 +29,6 @@ void test_Camera(){
 	Frame current;
 	while (true) {
 		if (zed.Grab(left, right)) {
-			//cv::imshow("image", left);
-			//imshow("image", left, right);
 			cv::cvtColor(left, left, CV_RGBA2GRAY);
 			cv::cvtColor(right, right, CV_RGBA2GRAY);
 			current.ExtractFeatures(left, right);
@@ -98,7 +97,6 @@ void test_offline() {
 #ifdef SAVE_POINTS
 		const size_t pos = images[i].find('.');
 		const std::string points_file(data_dir + "\\obj\\" + images[i].substr(0, pos) + ".obj");
-		std::cout << "[test_offline] points_file: " << points_file << std::endl;
 		visg.SaveMapPoints(points_file);
 #endif
 		std::cout << "[test_offline] Time elapsed(ms): " << timer.ElapsedMS() << std::endl;
@@ -157,4 +155,38 @@ void test_thread_pool() {
 		std::cout << e.what() << std::endl;
 	}
 
+}
+
+void test_loop() {
+	std::vector<std::string> db_images,db_image_names,test_images,test_image_names;
+	// vga mode
+	const std::string db_dir("H:\\dataset\\20171214_1\\20171214");
+	const std::string test_dir("H:\\dataset\\20171214_1\\loop");
+	const std::string dictionary("H:\\dataset\\20171214_1\\20171214\\vocabulary.yml.gz");
+	loadImage(db_dir, db_images);
+	db_image_names.reserve(db_images.size());
+	for (size_t i = 0; i < db_images.size(); ++i) {
+		const std::string left_image(db_dir + "\\cam0\\data\\" + db_images[i]);
+		db_image_names.push_back(left_image);
+	}
+
+	Loop loop;
+	loop.MakeDictionary(db_image_names);
+	loop.SaveDictionary(dictionary);
+
+	loadImage(test_dir, test_images);
+	test_image_names.reserve(test_images.size());
+	for (size_t i = 0; i < test_images.size(); ++i) {
+		const std::string left_image(test_dir + "\\cam0\\data\\" + test_images[i]);
+		test_image_names.push_back(left_image);
+	}
+
+	std::vector<cv::Mat> descriptors;
+	loop.LoadFeature(test_image_names, descriptors);
+	loop.AddFeatureToDB(descriptors);
+
+	for (int i = 0; i < descriptors.size(); ++i) {
+		std::cout << "image " << i << " ";
+		loop.ComputeSimilar(descriptors[i]);
+	}
 }
