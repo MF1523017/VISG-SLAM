@@ -13,6 +13,10 @@
 
 #define SAVE_POINTS
 
+//#define TRAINING
+
+std::vector<float> errors;
+
 using namespace VISG;
 
 void test_Camera(){
@@ -77,8 +81,10 @@ void test_offline() {
 	//const std::string data_dir("H:\\dataset\\20171120\\20171120");
 
 	// vga mode
-	const std::string data_dir("H:\\dataset\\20171214_1\\20171214");
-	
+	//const std::string data_dir("H:\\dataset\\20171214_1\\20171214");
+	//const std::string data_dir("H:\\dataset\\20180423_1");
+	const std::string data_dir("H:\\dataset\\20180424_0");
+
 	//chessboard
 	//const std::string data_dir("H:\\dataset\\20171207_chessboard\\20171207");
 	loadImage(data_dir, images);
@@ -101,14 +107,24 @@ void test_offline() {
 #endif
 		std::cout << "[test_offline] Time elapsed(ms): " << timer.ElapsedMS() << std::endl;
 	}
+
+	// save rt
+	SaveT(data_dir + "\\position_groundtruth.txt", visg.positions_groundtruth());
+	SaveT(data_dir + "\\position_slam.txt", visg.positions_slam());
+	 // save errors
+	std::ofstream of(data_dir + "\\errors.txt");
+	for (const auto & e: errors) {
+		of << e << std::endl;
+	}
+	of.close();
 }
 
 void test_stereo(){
 	VisgSlamOffline visg;
 	Stereo stereo;
-	std::string points_file("H:\\dataset\\20171214_1\\20171214\\stereo\\points.obj");
-	std::string left_file("H:\\dataset\\20171214_1\\20171214\\cam0\\data\\870747931678.jpg");
-	std::string right_file("H:\\dataset\\20171214_1\\20171214\\cam1\\data\\870747931678.jpg");
+	std::string points_file("H:\\dataset\\20180423_0\\stereo\\points.obj");
+	std::string left_file("H:\\dataset\\20180423_0\\cam0\\data\\2492355038416.jpg");
+	std::string right_file("H:\\dataset\\20180423_0\\cam1\\data\\2492355038416.jpg");
 	/*std::string left_file("H:\\opencv\\sources\\samples\\data\\aloeL.jpg");
 	std::string right_file("H:\\opencv\\sources\\samples\\data\\aloeR.jpg");*/
 	cv::Mat left = cv::imread(left_file,-1);
@@ -163,17 +179,20 @@ void test_loop() {
 	const std::string db_dir("H:\\dataset\\20171214_1\\20171214");
 	const std::string test_dir("H:\\dataset\\20171214_1\\loop");
 	const std::string dictionary("H:\\dataset\\20171214_1\\20171214\\vocabulary.yml.gz");
+	Loop loop;
+#ifdef TRAINING
 	loadImage(db_dir, db_images);
 	db_image_names.reserve(db_images.size());
 	for (size_t i = 0; i < db_images.size(); ++i) {
 		const std::string left_image(db_dir + "\\cam0\\data\\" + db_images[i]);
 		db_image_names.push_back(left_image);
 	}
-
-	Loop loop;
 	loop.MakeDictionary(db_image_names);
 	loop.SaveDictionary(dictionary);
-
+#else
+	const std::string dictionary_file("H:\\my_only\\code\\slam\\ORB-SLAM2\\ORB_SLAM2\\Vocabulary\\ORBvoc.txt\\ORBvoc.txt");
+	loop.LoadDictionary(dictionary_file);
+#endif 
 	loadImage(test_dir, test_images);
 	test_image_names.reserve(test_images.size());
 	for (size_t i = 0; i < test_images.size(); ++i) {
