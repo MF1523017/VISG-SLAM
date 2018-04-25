@@ -2,6 +2,11 @@
 #include "draw_board.h"
 #include "utils.hpp"
 #include "optimizer.h"
+
+// for test
+#include "test.h"
+extern std::vector<float> errors;
+
 namespace VISG {
 	OrbTracker::OrbTracker() :TrackerInterface(),p_frame_cur_(nullptr), p_frame_last_(nullptr), 
 		p_frame_ref_(nullptr), motion_counter_(0), frame_id_(0){
@@ -48,6 +53,8 @@ namespace VISG {
 			float e = Optimizer::ProjectPointsStereoMatch(p_frame_cur_->map_points, 
 				p_frame_cur_->match_points, p_frame_cur_->inliers, p_frame_cur_->rRc, p_frame_cur_->rtc, pro_points);
 			std::cout << "[OrbTracker::Init] project error: " << e << std::endl;
+			// for test
+			errors.push_back(e);
 #endif
 
 			DrawBoard::handle().DrawMatch(left, right, p_frame_cur_->match_points);
@@ -80,17 +87,20 @@ namespace VISG {
 				state_ = LOST;
 			}
 		}
+
 		p_frame_last_ = p_frame_cur_;
 		const size_t diff_id = p_frame_cur_->id() - p_frame_ref_->id()-1;
-		//local_frames_[diff_id] = p_frame_cur_;
 		motion_counter_ = 0;
 		cv::Mat tmp(left.size(), left.type(),cv::Scalar::all(0)), left1(left.size(),left.type(), cv::Scalar::all(0));
+
 #ifdef USE_PROJECT_ERROR
 		std::vector<cv::Point2f> pro_points;
 		float e = Optimizer::ProjectPointsRefTrack2D3D(p_frame_ref_->map_points,
 			p_frame_cur_->left_key_points, my_matches, p_frame_cur_->rRc, p_frame_cur_->rtc, pro_points);
 		std::cout << "[OrbTracker Track] Project error: " << e << std::endl;
 		DrawBoard::handle().DrawProjectError(tmp, p_frame_cur_->left_key_points, my_matches, pro_points);
+		if(e < 2)
+			errors.push_back(e);
 #endif
 
 	// drawing
@@ -146,6 +156,7 @@ namespace VISG {
 		frame_id_ = 0;
 		local_frames_.clear();
 		ref_image.release();
+		DrawBoard::handle().Clear();
 	}
 
 	int OrbTracker::GetPose(Eigen::Matrix3f& R, Eigen::Vector3f &t) const {
