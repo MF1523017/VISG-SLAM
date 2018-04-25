@@ -20,6 +20,7 @@ namespace VISG {
 	// convert depth to image to save
 	void depth2Image(const cv::Mat& depth, cv::Mat &depth_image);
 
+	// r t translation
 	Eigen::Matrix3f Rcv2Eigen(const cv::Mat &R);
 	Eigen::Vector3f Tcv2Eigen(const cv::Mat &t);
 	Eigen::Vector3f Pcv2Eigen(const cv::Point3f &p);
@@ -32,6 +33,8 @@ namespace VISG {
 	void loadImage(const std::string & file_dir, std::vector<std::string> &images);
 	void SaveXYZ(const std::string & file_name, const cv::Mat& mat,const cv::Mat &img);
 
+	// save t
+	void SaveT(const std::string & file_name, const std::vector<Eigen::Vector3f> & positions);
 }
 
 #endif /*__UTILS_HPP__*/

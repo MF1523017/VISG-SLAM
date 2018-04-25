@@ -146,8 +146,16 @@ namespace VISG {
 				cv::Vec3b color = img.at<cv::Vec3b>(y, x);
 				if (dis2 > 0.09||fabs(point[2] - max_z) < FLT_EPSILON || fabs(point[2]) > max_z) continue;
 				of <<"v " <<point[0] << " " << point[1] << " " << point[2] << " "<< 
-					(int)color[0] << " " << (int)color[1] << " " << (int)color[2] <<std::endl;;
+					(int)color[2] << " " << (int)color[1] << " " << (int)color[0] <<std::endl;;
 			}
+		}
+		of.close();
+	}
+
+	void SaveT(const std::string & file_name, const std::vector<Eigen::Vector3f> & positions) {
+		std::ofstream of(file_name);
+		for (const auto & p : positions) {
+			of << p.x() <<" "<< p.y() <<" "<< p.z() << std::endl;
 		}
 		of.close();
 	}
