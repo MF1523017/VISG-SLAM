@@ -9,6 +9,7 @@
 namespace VISG {
 	class Loop {
 	public:
+		using Ptr = std::shared_ptr<Loop>;
 		Loop() :orb_feature_ptr_(new OrbFeature) {}
 		bool MakeDictionary(const std::vector<std::string> &image_names);
 		void SaveDictionary(const std::string &dictionary);
