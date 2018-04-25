@@ -14,9 +14,9 @@ def nums(f):
 
 def get_images(file_dir):
     files = os.listdir(os.path.join(file_dir,'data'))
-    print files
+ #   print (files)
     filess = sorted(files,key = nums)
-    print filess
+ #   print filess
     with open(os.path.join(file_dir,'data.csv'),'w') as data:
         for f in filess:    
             name,_ = f.split('.')
@@ -26,5 +26,5 @@ def get_images(file_dir):
             data.write(" \n")
 
 if __name__ == '__main__':
-    file_dir = r'H:\dataset\20171214_1\20171214\cam0'
+    file_dir = r'H:\dataset\20180424_0\cam0'
     get_images(file_dir)
