@@ -23,8 +23,14 @@ namespace VISG {
 			cv::cvtColor(img, gray, CV_RGB2GRAY);
 		std::vector<cv::Point2f> corners;
 		
+
 		bool patternfound = cv::findChessboardCorners(gray, pattern_size_, corners,
 			cv::CALIB_CB_ADAPTIVE_THRESH + cv::CALIB_CB_NORMALIZE_IMAGE + cv::CALIB_CB_FAST_CHECK);
+		
+		if (corners.empty()){
+			std::cout << "[Chessboard::GetPose] corners is empty" << std::endl;
+			return false;
+		}
 		if (patternfound)
 			cv::cornerSubPix(gray, corners, cv::Size(11, 11), cv::Size(-1, -1),
 				cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
