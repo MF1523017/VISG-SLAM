@@ -109,20 +109,31 @@ namespace VISG {
 			<< Common::lRr << " t: " << Common::ltr << std::endl;
 #endif
 	}
+
 	void VisgSlamOffline::Run(cv::Mat &left, cv::Mat &right) {
-		cv::Mat left_, right_;		
+		cv::Mat left_, right_;	
+		Eigen::Matrix3f R_truth, R;
+		Eigen::Vector3f t_truth, t;
 #ifdef USE_CHESSBOARD	
-		Eigen::Matrix3f R_truth,R;
-		Eigen::Vector3f t_truth,t;
 		auto ret = Chessboard::handle(7, 6, 0.025)->GetPose(left, Common::K, R_truth, t_truth);
 		//std::cout << "[VisgSlamOffline Run] chess get pose: " << ret << std::endl;
+		if (!ret) {
+			return;
+		}
 		(*tracker_)(left, right);
 		tracker_->GetPose(R, t);
 		std::cout << "[VisgSlamOffline Run] t error: " << (t_truth - t).transpose() << std::endl;
+		if (t_truth.norm() > 10 || t.norm() > 10)
+			return;
+		positions_groundtruth_.push_back(t_truth);
+		
+
+
 #else
 		(*tracker_)(left, right);
+		tracker_->GetPose(R, t);
 #endif
-
+		positions_slam_.push_back(t);
 		cv::waitKey();
 	}
 

@@ -21,8 +21,14 @@ public:
 	VisgSlamOffline();
 	void Run(cv::Mat &left, cv::Mat &right);
 	void SaveMapPoints(const std::string &file_name);
+	// for test
+	std::vector<Eigen::Vector3f> positions_groundtruth()const { return positions_groundtruth_; }
+	std::vector<Eigen::Vector3f> positions_slam()const { return positions_slam_; }
 private:
 	TrackerInterface::Ptr tracker_;
+	//for test
+	std::vector<Eigen::Vector3f> positions_groundtruth_;
+	std::vector<Eigen::Vector3f> positions_slam_;
 };
 }
 
