@@ -39,6 +39,11 @@ public:
 	void ShowAR(cv::Mat &img) {
 		cv::imshow("ar", img);
 	}
+	void Clear() {
+		is_tap = 0;
+		boxes_.clear();
+	}
+
 private:
 	Eigen::Vector3f FindGround(const std::vector<Eigen::Vector3f> &point_cloud, std::vector<Eigen::Vector3f> &inlier_points);
 	void DrawGround(cv::Mat &result, std::vector<Eigen::Vector3f> &point_cloud, const Eigen::Matrix3f wRc, const Eigen::Vector3f &wtc);
