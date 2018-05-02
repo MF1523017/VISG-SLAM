@@ -39,11 +39,12 @@ namespace VISG {
 			if (Track(left, right)&& IsKeyFrame()) {
 				auto id = IsLoopClosing();
 				if (id != -1) {
-					cv::waitKey();
 					p_frame_cur_ = p_frame_ref_ = key_frames_[id];
 				}else {
 					key_frames_.push_back(p_frame_cur_);
+					loop_closing_->AddFeatureToDB(p_frame_cur_->left_descriptors);
 				}
+				cv::waitKey();
 			}
 			break;
 		case VISG::TrackerInterface::LOST:
