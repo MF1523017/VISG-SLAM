@@ -29,7 +29,7 @@ namespace VISG {
 		// std::cout << "[Matcher ]match::min_dis: " << min_dis << std::endl;
 		matches.reserve(d_matches.size());
 		for (size_t i = 0; i < d_matches.size(); ++i) {
-			if (d_matches[i].distance <= std::max(static_cast<double>(2 * min_dis), 30.0)) {
+			if (d_matches[i].distance <= std::max(static_cast<double>(2 * min_dis), Common::MatchMinDisTh)) {
 				matches.push_back(std::make_pair(d_matches[i].queryIdx, d_matches[i].trainIdx));
 			}
 		}

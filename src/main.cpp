@@ -20,6 +20,7 @@ int main(int argc, char **argv) {
 	//test_thread_pool();
 	//test_loop();
 	//test_EuRoCDataset();
+	//test_KITTIDataset();
 #endif
     return 0;
 }

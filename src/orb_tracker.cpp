@@ -38,11 +38,10 @@ namespace VISG {
 		case VISG::TrackerInterface::TRACKING:
 			if (Track(left, right)&& IsKeyFrame()) {
 				auto id = IsLoopClosing();
+				key_frames_.push_back(p_frame_cur_);
+				loop_closing_->AddFeatureToDB(p_frame_cur_->left_descriptors);
 				if (id != -1) {
 					p_frame_cur_ = p_frame_ref_ = key_frames_[id];
-				}else {
-					key_frames_.push_back(p_frame_cur_);
-					loop_closing_->AddFeatureToDB(p_frame_cur_->left_descriptors);
 				}
 				//cv::waitKey();
 			}
@@ -62,7 +61,7 @@ namespace VISG {
 		size_t ret = p_frame_cur_->StereoMatch(left);
 		
 		std::cout << "[OrbTracker::Init] init .....: " << ret << std::endl;
-		if (ret > 60) {
+		if (ret > Common::InitMatchNum) {
 			std::cout << "[OrbTracker::Init] mathches size: " << ret << std::endl;
 			p_frame_last_ = p_frame_ref_ = p_frame_cur_;
 			ref_image = left.clone();
@@ -99,7 +98,7 @@ namespace VISG {
 			p_frame_cur_->MotionTrack(p_frame_last_);
 			std::cout << "[OrbTracker Track] MotionTrack matches size: " << my_matches.size() << std::endl;
 			//cv::waitKey();
-			if (30 == ++motion_counter_){
+			if (Common::LostNum == ++motion_counter_){
 				state_ = LOST;
 			}
 		}
@@ -184,7 +183,7 @@ namespace VISG {
 	// is key frame?
 	bool OrbTracker::IsKeyFrame()const {
 		auto last_key_frame = key_frames_.back();
-		if (p_frame_cur_->id() - last_key_frame->id() > 10 && 
+		if (p_frame_cur_->id() - last_key_frame->id() > Common::KeyFrameIdDis &&
 			p_frame_cur_->left_key_points.size() > (Common::FeaturesNum >> 1)) {
 			MyMatches matches;
 			Matcher::OrbMatch(matches, p_frame_cur_->left_descriptors, last_key_frame->left_descriptors);

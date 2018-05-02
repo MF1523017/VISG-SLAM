@@ -16,4 +16,6 @@ void test_thread_pool();
 void test_loop();
 
 void test_EuRoCDataset();
+
+void test_KITTIDataset();
 #endif // ! TEST_H
