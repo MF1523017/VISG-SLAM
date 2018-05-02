@@ -2,6 +2,7 @@
 #include "draw_board.h"
 #include "utils.hpp"
 #include "optimizer.h"
+#include "matcher.h"
 
 // for test
 #include "test.h"
@@ -13,20 +14,37 @@ namespace VISG {
 		local_frames_.resize(Common::EveryNFrames,nullptr);
 	}
 
+	// load dictionary
+	OrbTracker::OrbTracker(const std::string & dict) : TrackerInterface(), p_frame_cur_(nullptr), p_frame_last_(nullptr),
+		p_frame_ref_(nullptr), loop_closing_(new Loop), motion_counter_(0), frame_id_(0) {
+		local_frames_.resize(Common::EveryNFrames, nullptr);
+		loop_closing_->LoadDictionary(dict);
+	}
+
 	void OrbTracker::operator()(cv::Mat &left, cv::Mat &right) {
 		p_frame_cur_ = std::make_shared<Frame>(frame_id_);
 		p_frame_cur_->ExtractFeatures(left, right);
-		
 	//	DrawBoard::handle().DrawFeatures(right, p_frame_cur_->right_key_points, false);
 		// TODO ,
 		switch (state_)
 		{
 		case VISG::TrackerInterface::INIT:
-			if(Init(left,right))
+			if (Init(left, right)) {
+				key_frames_.push_back(p_frame_cur_);
+				loop_closing_->AddFeatureToDB(p_frame_cur_->left_descriptors);
 				state_ = TRACKING;
+			}
 			break;
 		case VISG::TrackerInterface::TRACKING:
-			Track(left, right);
+			if (Track(left, right)&& IsKeyFrame()) {
+				auto id = IsLoopClosing();
+				if (id != -1) {
+					cv::waitKey();
+					p_frame_cur_ = p_frame_ref_ = key_frames_[id];
+				}else {
+					key_frames_.push_back(p_frame_cur_);
+				}
+			}
 			break;
 		case VISG::TrackerInterface::LOST:
 			Reboot();
@@ -41,6 +59,7 @@ namespace VISG {
 
 	bool OrbTracker::Init(cv::Mat &left, cv::Mat &right) {
 		size_t ret = p_frame_cur_->StereoMatch(left);
+		
 		std::cout << "[OrbTracker::Init] init .....: " << ret << std::endl;
 		if (ret > 60) {
 			std::cout << "[OrbTracker::Init] mathches size: " << ret << std::endl;
@@ -64,22 +83,18 @@ namespace VISG {
 	}
 
 	bool OrbTracker::Track(cv::Mat &left, cv::Mat &right){
-		// TODO not defined
-	//	std::cout << "[OrbTracker Track] p_frame_ref_ status: before " << p_frame_ref_.use_count() << std::endl;
 		p_frame_cur_->StereoMatch(left);
 		MyMatches my_matches;
 		bool ret;
-		// recover pose using  2d to 2d corrspondence 
-		/*auto ret = p_frame_cur_->RefTrack2D2D(p_frame_ref_, my_matches);
-		std::cout << "[OrbTracker Track] RefTrack2D2D ret: " << ret << " mathches size: " << my_matches.size() << std::endl;*/
-		
 		// recover pose using 2d to 3d corrspondence
-		 ret = p_frame_cur_->RefTrack2D3D(p_frame_ref_, my_matches);
+		ret = p_frame_cur_->RefTrack2D3D(p_frame_ref_, my_matches);
 		
 		// recover pose using 3d to 3d corrspondence (icp)
 		//ret = p_frame_cur_->RefTrack3D3D(p_frame_ref_, my_matches);
 	
 		if (!ret) {
+			/*p_frame_ref_ = p_frame_cur_;
+			return ret;*/
 			p_frame_cur_->MotionTrack(p_frame_last_);
 			std::cout << "[OrbTracker Track] MotionTrack matches size: " << my_matches.size() << std::endl;
 			//cv::waitKey();
@@ -138,7 +153,6 @@ namespace VISG {
 	}
 
 	void OrbTracker::GetMapPoints(std::vector<Eigen::Vector3f> &map_points, std::vector<Eigen::Vector3i> &colors) {
-		// TODO not defined
 		p_frame_cur_->GetwMapPoints(map_points);
 		colors.clear();
 		colors.reserve(map_points.size());
@@ -155,14 +169,41 @@ namespace VISG {
 		motion_counter_ = 0;
 		frame_id_ = 0;
 		local_frames_.clear();
+		key_frames_.clear();
 		ref_image.release();
 		DrawBoard::handle().Clear();
 	}
 
 	int OrbTracker::GetPose(Eigen::Matrix3f& R, Eigen::Vector3f &t) const {
-		// TODO not defined
 		R = p_frame_cur_->wRc;
 		t = p_frame_cur_->wtc;
 		return 0;
 	}
+
+	// is key frame?
+	bool OrbTracker::IsKeyFrame()const {
+		auto last_key_frame = key_frames_.back();
+		if (p_frame_cur_->id() - last_key_frame->id() > 10 && 
+			p_frame_cur_->left_key_points.size() > (Common::FeaturesNum >> 1)) {
+			MyMatches matches;
+			Matcher::OrbMatch(matches, p_frame_cur_->left_descriptors, last_key_frame->left_descriptors);
+			if (matches.size() < Common::KeyFrameTh) {
+				std::cout << "[OrbTracker::IsKeyFrame] matches size: " << matches.size() << std::endl;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// is loop closing
+
+	int OrbTracker::IsLoopClosing()const {
+		DBoW3::QueryResults ret;
+		loop_closing_->ComputeSimilar(p_frame_cur_->left_descriptors,ret);
+		if (ret[0].Score > Common::LoopClosingTh)
+			return ret[0].Id;
+		return -1;
+	}
+
+
 }
