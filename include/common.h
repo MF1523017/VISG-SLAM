@@ -30,6 +30,10 @@ namespace VISG {
 		static size_t Levels;
 		static size_t EveryNFrames;
 		static double LoopClosingTh;
+		static size_t Common::InitMatchNum;
+		static size_t Common::LostNum;
+		static double Common::MatchMinDisTh;
+		static size_t Common::KeyFrameIdDis;
 	};
 
 }

@@ -14,11 +14,15 @@ namespace VISG {
 	cv::Mat Common::DistCoeffs = cv::Mat::zeros(4, 1, CV_32F);
 	float Common::BaseLine = 0.12;
 	size_t Common::HistBin = 200;
-	int Common::BestOrbDistance = 80;
+	int Common::BestOrbDistance = 200;
 	size_t Common::FeaturesNum = 2000;
 	size_t Common::KeyFrameTh = Common::FeaturesNum / 10;
 	float Common::ScaleFactor = 1.2;
 	size_t Common::Levels = 8;
 	size_t Common::EveryNFrames = 2;
-	double Common::LoopClosingTh = 0.045;
+	double Common::LoopClosingTh = 0.04;
+	size_t Common::InitMatchNum = 30;
+	size_t Common::LostNum = 300;
+	double Common::MatchMinDisTh = 40.0;
+	size_t Common::KeyFrameIdDis = 30;
 }
