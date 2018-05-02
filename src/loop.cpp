@@ -26,9 +26,9 @@ namespace VISG {
 	}
 
 	bool Loop::LoadDictionary(const std::string &dictionary) {
-		std::cout << "[Loop::SaveDictionary]: loading dictionary... " << vocab_ << std::endl;
 		vocab_.load(dictionary);
 		db_.setVocabulary(vocab_, false, 0);
+		std::cout << "[Loop::LoadDictionary]: loading dictionary... " << vocab_ << std::endl;
 		std::cout << "done! " << std::endl;
 		return true;
 	}
@@ -52,11 +52,13 @@ namespace VISG {
 		std::cout << "[Loop::AddFeatureToDB] database info: " << db_ << std::endl;
 	}
 
-	void Loop::ComputeSimilar(const cv::Mat &descriptor) {
-		DBoW3::QueryResults ret;
+	void Loop::AddFeatureToDB(const cv::Mat &descriptor) {
+		db_.add(descriptor);
+	}
+
+	void Loop::ComputeSimilar(const cv::Mat &descriptor, DBoW3::QueryResults &ret) {
 		db_.query(descriptor, ret, 3);
 		std::cout << "[Loop::ComputeSimilar] query return " << ret << std::endl;
-	
 	}
 
 

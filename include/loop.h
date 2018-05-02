@@ -20,7 +20,8 @@ namespace VISG {
 		bool LoadDictionary(const std::string &dictionary);
 		void LoadFeature(const std::vector<std::string> &image_names, std::vector<cv::Mat> &descriptors);
 		void AddFeatureToDB(const std::vector<cv::Mat> &descriptors);
-		void ComputeSimilar(const cv::Mat &descriptor);
+		void AddFeatureToDB(const cv::Mat &descriptor);
+		void ComputeSimilar(const cv::Mat &descriptor, DBoW3::QueryResults &ret);
 	private:
 		OrbFeature::Ptr orb_feature_ptr_;
 		DBoW3::Vocabulary vocab_;
