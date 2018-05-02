@@ -30,7 +30,6 @@ public:
 	bool RefTrack3D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches);
 	void MotionTrack(Frame::Ptr p_frame_ref);
 	bool FetchMatches(Frame::Ptr p_frame_ref, MyMatches &inliers_matches);
-	bool IsKeyFrame(MyMatches &matches);
 	void GetwMapPoints(std::vector<Eigen::Vector3f> &valid_map_points);
 	~Frame();
 	const size_t id()const { return id_; }
@@ -52,6 +51,7 @@ private:
 	bool RecoverPoseWithcvPnp(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t);
 	bool RecoverPoseWithPnpSolver(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t);
 	bool RecoverPoseWithStereoMatchesPnp(Frame::Ptr p_frame_ref, MyMatches &inliers_matches, cv::Mat &R, cv::Mat &t);
+	void UndistortKeyPoints(KeyPoints &key_points);
 	Feature::Ptr p_orb_left_;
 	Feature::Ptr p_orb_right_;
 	size_t id_;

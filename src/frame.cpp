@@ -17,6 +17,8 @@ void Frame::ExtractFeatures(const cv::Mat&left, const cv::Mat&right) {
 	std::thread thread_right(&Frame::ExtractORB, this, right, false);
 	thread_left.join();
 	thread_right.join();
+	//UndistortKeyPoints(left_key_points);
+	//UndistortKeyPoints(right_key_points);
 }
 void Frame::ExtractORB(const cv::Mat&img, bool is_left) {
 	if (is_left)
@@ -25,11 +27,6 @@ void Frame::ExtractORB(const cv::Mat&img, bool is_left) {
 		p_orb_right_->Extract(img,right_key_points,right_descriptors);
 }
 
-
-
-bool Frame::IsKeyFrame(MyMatches &matches) {
-	return (matches.size() < KeyFrame::keys_th_tracked);
-}
 
 
 size_t Frame::StereoMatch(const cv::Mat &left) {
@@ -41,13 +38,14 @@ size_t Frame::StereoMatch(const cv::Mat &left) {
 	for (size_t i = 0; i < Common::HistBin; ++i) {
 		r_hist[i].reserve(200);
 	}
-	size_t step = Common::Height / Common::HistBin + 1;
+	
+	double step = static_cast<double>(Common::Height) / Common::HistBin + 1;
 	const size_t point_size = right_key_points.size();
+
 	for (size_t i = 0; i < point_size; ++i) {
 		size_t idx = floor(right_key_points[i].pt.y / step);
 		r_hist[idx].push_back(i);
 	}
-
 	// get the match points 
 	const size_t keys_size = left_key_points.size();
 	for (size_t i = 0; i < keys_size; ++i) {
@@ -175,11 +173,13 @@ bool Frame::FetchMatches(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 		std::cout << "[Frame::RefTrack2D3D] error: E is empty: " << std::endl;
 		return false;
 	}
+
 	int valid_count = cv::countNonZero(mask);
 	if (valid_count < 10 || static_cast<double>(valid_count) / points_ref.size() < 0.6) {
 		std::cout << "[Frame::RefTrack2D3D] error: valid_count : " << valid_count << std::endl;
 		return false;
 	}
+
 	inliers_matches.reserve(matches1.size());
 	for (size_t i = 0; i < mask.rows; ++i) {
 		int status = mask.at<char>(i, 0);
@@ -190,6 +190,7 @@ bool Frame::FetchMatches(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 			ref_map_points[queryIdx]->BeObserved(id_, trainIdx);
 		}
 	}
+
 	return true;
 }
 
@@ -201,13 +202,7 @@ bool Frame::RefTrack2D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 		return false;
 	}
 	cv::Mat R(3,3,CV_32F), t(3,1,CV_32F);
-	
-	//ret = RecoverPoseWithcvPnp(p_frame_ref, inliers_matches, R, t);
-	//if (!ret) {
-	//	std::cout << "[Frame::RefTrack2D3D]: RecoverPose error!" << std::endl;
-	//	return false;
-	//}
-	//
+
 	ret = RecoverPoseWithPnpSolver(p_frame_ref, inliers_matches, R, t);
 	//ret = RecoverPoseWithStereoMatchesPnp(p_frame_ref, inliers_matches, R, t);
 	Eigen::Matrix3f cRr = Rcv2Eigen(R);//ref to cur
@@ -229,10 +224,12 @@ bool Frame::RecoverPoseWithcvPnp(Frame::Ptr p_frame_ref, MyMatches &inliers_matc
 	std::vector<cv::Point2f> points2;
 	points3.reserve(inliers_matches.size());
 	points2.reserve(inliers_matches.size());
+
 	for (auto it = inliers_matches.begin(); it != inliers_matches.end(); ++it) {
 		points3.push_back(Pdouble2cv(p_frame_ref->map_points[it->first]->point));
 		points2.push_back(left_key_points[it->second].pt);
 	}
+
 	cv::Mat Rvec(3,1,CV_32F),mask;
 	// R t: brings points from the model coordinate system to the camera coordinate system
 	bool ret = cv::solvePnPRansac(points3, points2, Common::K, cv::Mat(), Rvec, t,true,100,8,0.99,mask);
@@ -240,6 +237,7 @@ bool Frame::RecoverPoseWithcvPnp(Frame::Ptr p_frame_ref, MyMatches &inliers_matc
 		std::cout << "[Frame::RecoverPose] pnp error" << std::endl;
 		return false;
 	}
+
 	cv::Rodrigues(Rvec, R);
 
 #ifdef USE_PROJECT_ERROR
@@ -263,6 +261,7 @@ bool Frame::RecoverPoseWithPnpSolver(Frame::Ptr p_frame_ref, MyMatches &inliers_
 	std::vector<cv::Point2f> points2;
 	points2.reserve(inliers_matches.size());
 	std::vector<cv::Point3f> points3;
+	
 	for (auto it = inliers_matches.begin(); it != inliers_matches.end(); ++it) {
 		mp_p3ds.push_back(p_frame_ref->map_points[it->first]);
 		points2.push_back(left_key_points[it->second].pt);
@@ -296,6 +295,7 @@ bool Frame::RecoverPoseWithStereoMatchesPnp(Frame::Ptr p_frame_ref, MyMatches &i
 	MatchPoints stereo_points;
 	stereo_points.reserve(inliers_matches.size());
 	std::vector<cv::Point3f> points3;
+	
 	for (auto it = inliers_matches.begin(); it != inliers_matches.end(); ++it) {
 		mp_p3ds.push_back(p_frame_ref->map_points[it->first]);
 		stereo_points.push_back(match_points[it->second]);
@@ -306,6 +306,7 @@ bool Frame::RecoverPoseWithStereoMatchesPnp(Frame::Ptr p_frame_ref, MyMatches &i
 	StereoPnpSolver pnp_solver;
 	pnp_solver.Solve(mp_p3ds, stereo_points, Rvec, t);
 	cv::Rodrigues(Rvec, R);
+	
 	//	std::cout << "[Frame::RecoverPoseWithPnpSolver] R: " << R << std::endl << "t: " << t << std::endl;
 #ifdef USE_PROJECT_ERROR
 	std::vector<cv::Point2f> pro_points;
@@ -414,6 +415,42 @@ bool Frame::RefTrack3D3D(Frame::Ptr p_frame_ref, MyMatches &inliers_matches) {
 	return true;
 }
 
+void Frame::UndistortKeyPoints(KeyPoints &key_points) {
+	if (Common::DistCoeffs.at<float>(0) == 0.0)
+	{
+		return;
+	}
+	int N = key_points.size();
+	// Fill matrix with points
+	cv::Mat mat(N, 2, CV_32F);
+	for (int i = 0; i<N; i++)
+	{
+		mat.at<float>(i, 0) = key_points[i].pt.x;
+		mat.at<float>(i, 1) = key_points[i].pt.y;
+	}
+
+	// Undistort points
+	std::cout << "[Frame::UndistortKeyPoints]:before undistort: " << Common::K << std::endl
+		<< "key0" << key_points[0].pt << std::endl;
+	mat = mat.reshape(2);
+	cv::undistortPoints(mat, mat, Common::K, Common::DistCoeffs, cv::Mat(), Common::K);
+	mat = mat.reshape(1);
+	std::cout << "[Frame::UndistortKeyPoints]:after undistort: " << Common::K << std::endl
+		<< "key0" << key_points[0].pt << std::endl;
+
+
+	// Fill undistorted keypoint vector
+	for (int i = 0; i<N; i++)
+	{
+		cv::KeyPoint kp = key_points[i];
+		kp.pt.x = mat.at<float>(i, 0);
+		kp.pt.y = mat.at<float>(i, 1);
+		key_points[i] = kp;
+	}
+
+}
+
+// destory
 Frame::~Frame() {
 	left_descriptors.release();
 	right_descriptors.release();
