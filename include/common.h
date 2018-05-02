@@ -20,13 +20,16 @@ namespace VISG {
 		static cv::Mat K;
 		static cv::Mat lRr;
 		static cv::Mat ltr;
+		static cv::Mat DistCoeffs;
 		static float BaseLine;
 		static size_t HistBin;
 		static int BestOrbDistance;
 		static size_t FeaturesNum;
+		static size_t KeyFrameTh;
 		static float ScaleFactor;
 		static size_t Levels;
 		static size_t EveryNFrames;
+		static double LoopClosingTh;
 	};
 
 }
