@@ -14,4 +14,6 @@ void test_stereo();
 void test_thread_pool();
 
 void test_loop();
+
+void test_EuRoCDataset();
 #endif // ! TEST_H

@@ -13,6 +13,8 @@
 
 #define SAVE_POINTS
 
+#define LOOP_CLOSING
+
 //#define TRAINING
 
 std::vector<float> errors;
@@ -73,7 +75,7 @@ void test_VisgSlamOffline(char **argv){
 
 
 void test_offline() {
-	VisgSlamOffline visg;
+
 	std::vector<std::string> images;
 
 	//720 mode
@@ -83,10 +85,18 @@ void test_offline() {
 	// vga mode
 	//const std::string data_dir("H:\\dataset\\20171214_1\\20171214");
 	//const std::string data_dir("H:\\dataset\\20180423_1");
-	const std::string data_dir("H:\\dataset\\20180424_0");
-
+	//const std::string data_dir("H:\\dataset\\20180424_0");
+	const std::string data_dir("H:\\dataset\\20180502_0");
 	//chessboard
 	//const std::string data_dir("H:\\dataset\\20171207_chessboard\\20171207");
+#ifdef LOOP_CLOSING
+	//dictionary
+	const std::string dict("H:\\my_only\\code\\slam\\ORB-SLAM2\\ORB_SLAM2\\Vocabulary\\ORBvoc.txt\\ORBvoc.txt");
+	VisgSlamOffline visg(dict);
+#else
+	VisgSlamOffline visg;
+#endif
+
 	loadImage(data_dir, images);
 	Timer timer;
 	for (size_t i = 0; i < images.size(); ++i) {
@@ -96,7 +106,7 @@ void test_offline() {
 		cv::Mat left = cv::imread(left_image);
 		cv::Mat right = cv::imread(right_image);
 		if (left.empty() || right.empty()) {
-			std::cout << "error" << std::endl;
+			std::cout << "[test_offline] image empty error" << std::endl;
 			return;
 		}
 		visg.Run(left, right);
@@ -203,9 +213,71 @@ void test_loop() {
 	std::vector<cv::Mat> descriptors;
 	loop.LoadFeature(test_image_names, descriptors);
 	loop.AddFeatureToDB(descriptors);
-
+	DBoW3::QueryResults ret;
 	for (int i = 0; i < descriptors.size(); ++i) {
 		std::cout << "image " << i << " ";
-		loop.ComputeSimilar(descriptors[i]);
+		loop.ComputeSimilar(descriptors[i], ret);
 	}
+}
+
+void test_EuRoCDataset() {
+	// camera parameters
+	Common::Height = 480;
+	Common::Width = 752;
+	Common::Fx = 458.654;
+	Common::Fy = 457.296;
+	Common::Cx = 367.215;
+	Common::Cy = 248.375;
+	Common::K = (cv::Mat_<float>(3, 3) << Common::Fx, 0, Common::Cx,
+		0, Common::Fy, Common::Cy,
+		0, 0, 1);
+	Common::ltr.at<float>(0, 0) = 0.4790639384423901;
+	Common::FxInv = 1.0 / Common::Fx;
+	Common::FyInv = 1.0 / Common::Fy;
+	std::cout << "[VisgSlamOffline]   K: " << Common::K << " R: "
+		<< Common::lRr << " t: " << Common::ltr << std::endl;
+	Common::BaseLine = 0.4790639384423901;
+	Common::DistCoeffs.at<float>(0) = -0.28340811;
+	Common::DistCoeffs.at<float>(1) = 0.07395907;
+	Common::DistCoeffs.at<float>(2) = 0.00019359;
+	Common::DistCoeffs.at<float>(3) = 1.76187114e-05;
+
+	VisgSlamOffline visg;
+	std::vector<std::string> images;
+
+	
+	const std::string data_dir("H:\\dataset\\MH_01_easy\\mav0");
+	loadImage(data_dir, images);
+	Timer timer;
+	for (size_t i = 0; i < images.size(); ++i) {
+		timer.Reset();
+		const std::string left_image(data_dir + "\\cam0\\data\\" + images[i]+"g");
+		const std::string right_image(data_dir + "\\cam1\\data\\" + images[i]+"g");
+		std::cout << "[test_EuRoCDataset] left_image: " << left_image << std::endl;
+		cv::Mat left = cv::imread(left_image);
+		cv::Mat right = cv::imread(right_image);
+		if (left.empty() || right.empty()) {
+			std::cout << "[test_EuRoCDataset] image empty error" << std::endl;
+			return;
+		}
+		visg.Run(left, right);
+#ifdef SAVE_POINTS
+		const size_t pos = images[i].find('.');
+		const std::string points_file(data_dir + "\\obj\\" + images[i].substr(0, pos) + ".obj");
+		visg.SaveMapPoints(points_file);
+#endif
+		std::cout << "[test_EuRoCDataset] Time elapsed(ms): " << timer.ElapsedMS() << std::endl;
+	}
+
+	// save rt
+	SaveT(data_dir + "\\position_groundtruth.txt", visg.positions_groundtruth());
+	SaveT(data_dir + "\\position_slam.txt", visg.positions_slam());
+	// save errors
+	std::ofstream of(data_dir + "\\errors.txt");
+	for (const auto & e : errors) {
+		of << e << std::endl;
+	}
+	of.close();
+
+
 }
