@@ -25,11 +25,14 @@ public:
 	// for test
 	std::vector<Eigen::Vector3f> positions_groundtruth()const { return positions_groundtruth_; }
 	std::vector<Eigen::Vector3f> positions_slam()const { return positions_slam_; }
+	std::vector<Eigen::Vector3f> positions_key_frame();
+
 private:
 	TrackerInterface::Ptr tracker_;
 	//for test
 	std::vector<Eigen::Vector3f> positions_groundtruth_;
 	std::vector<Eigen::Vector3f> positions_slam_;
+	std::vector<Eigen::Vector3f> positions_key_frame_;
 };
 }
 

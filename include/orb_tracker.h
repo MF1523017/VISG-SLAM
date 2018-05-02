@@ -11,18 +11,15 @@ class OrbTracker:public TrackerInterface {
 public:
 	OrbTracker();
 	OrbTracker(const std::string & dict);
-	virtual ~OrbTracker() {
-		std::cout << "[~OrbTracker] key_frames size: " << key_frames_.size() << std::endl;
-		for (const auto &kf : key_frames_) {
-			std::cout << "[~OrbTracker] key_frame id: " << kf->id() << std::endl;
-		}
-	}
+	virtual ~OrbTracker() {}
 	virtual bool Init(cv::Mat &left, cv::Mat &right);
 	virtual void operator()(cv::Mat &left, cv::Mat &right);
 	virtual bool Track(cv::Mat &left, cv::Mat &right);
 	virtual void Reboot();
 	virtual int GetPose(Eigen::Matrix3f& R, Eigen::Vector3f &t) const;
 	virtual void GetMapPoints(std::vector<Eigen::Vector3f> &map_points, std::vector<Eigen::Vector3i> &colors);
+	virtual void GetKeyFramePositions(std::vector<Eigen::Vector3f> &positions)const;
+
 private:
 	bool IsKeyFrame()const;
 	int IsLoopClosing()const;

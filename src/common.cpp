@@ -20,5 +20,5 @@ namespace VISG {
 	float Common::ScaleFactor = 1.2;
 	size_t Common::Levels = 8;
 	size_t Common::EveryNFrames = 2;
-	double Common::LoopClosingTh = 0.05;
+	double Common::LoopClosingTh = 0.045;
 }

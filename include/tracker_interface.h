@@ -20,6 +20,7 @@ public:
 	virtual int GetPose(Eigen::Matrix3f& R, Eigen::Vector3f &t) const = 0;
 	virtual void GetMapPoints(std::vector<Eigen::Vector3f> &map_points,std::vector<Eigen::Vector3i> &colors)= 0;
 	TrackingState GetTrackingState()const { return state_; }
+	virtual void GetKeyFramePositions(std::vector<Eigen::Vector3f> &positions)const=0;
 protected:
 	TrackingState state_;
 	bool is_only_tracking_;

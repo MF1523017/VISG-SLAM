@@ -187,4 +187,11 @@ namespace VISG {
 		}
 		out_file.close();
 	}
+
+	// get key_frame
+
+	std::vector<Eigen::Vector3f> VisgSlamOffline::positions_key_frame() {
+		tracker_->GetKeyFramePositions(positions_key_frame_);
+		return positions_key_frame_;
+	}
 }

@@ -44,7 +44,7 @@ namespace VISG {
 					key_frames_.push_back(p_frame_cur_);
 					loop_closing_->AddFeatureToDB(p_frame_cur_->left_descriptors);
 				}
-				cv::waitKey();
+				//cv::waitKey();
 			}
 			break;
 		case VISG::TrackerInterface::LOST:
@@ -204,6 +204,14 @@ namespace VISG {
 		if (ret[0].Score > Common::LoopClosingTh)
 			return ret[0].Id;
 		return -1;
+	}
+
+	// get key frame positions
+	void OrbTracker::GetKeyFramePositions(std::vector<Eigen::Vector3f> &positions)const {
+		positions.reserve(key_frames_.size());
+		for (const auto &kf : key_frames_) {
+			positions.push_back(kf->wtc);
+		}
 	}
 
 
