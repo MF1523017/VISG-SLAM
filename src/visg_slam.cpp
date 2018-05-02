@@ -110,6 +110,45 @@ namespace VISG {
 #endif
 	}
 
+	VisgSlamOffline::VisgSlamOffline(const std::string &dictionary) :tracker_(new OrbTracker(dictionary)) {
+
+		// 720 mode
+#ifdef HDMODE
+		Common::Height = 720;
+		Common::Width = 1280;
+		Common::Fx = 695.822;
+		Common::Fy = 695.822;
+		Common::Cx = 638.049;
+		Common::Cy = 371.577;
+		Common::K = (cv::Mat_<float>(3, 3) << Common::Fx, 0, Common::Cx,
+			0, Common::Fy, Common::Cy,
+			0, 0, 1);
+		Common::ltr.at<float>(0, 0) = 0.12;
+		Common::BaseLine = 0.12;
+		Common::FxInv = 1.0 / Common::Fx;
+		Common::FyInv = 1.0 / Common::Fy;
+		std::cout << "[VisgSlamOffline] K: " << Common::K << " R: "
+			<< Common::lRr << " t: " << Common::ltr << std::endl;
+#else
+		// vga mode
+
+		Common::Height = 376;
+		Common::Width = 672;
+		Common::Fx = 345.766;
+		Common::Fy = 345.766;
+		Common::Cx = 334.065;
+		Common::Cy = 193.254;
+		Common::K = (cv::Mat_<float>(3, 3) << Common::Fx, 0, Common::Cx,
+			0, Common::Fy, Common::Cy,
+			0, 0, 1);
+		Common::ltr.at<float>(0, 0) = 0.12;
+		Common::FxInv = 1.0 / Common::Fx;
+		Common::FyInv = 1.0 / Common::Fy;
+		std::cout << "[VisgSlamOffline]   K: " << Common::K << " R: "
+			<< Common::lRr << " t: " << Common::ltr << std::endl;
+#endif
+	}
+
 	void VisgSlamOffline::Run(cv::Mat &left, cv::Mat &right) {
 		cv::Mat left_, right_;	
 		Eigen::Matrix3f R_truth, R;
@@ -134,7 +173,7 @@ namespace VISG {
 		tracker_->GetPose(R, t);
 #endif
 		positions_slam_.push_back(t);
-		cv::waitKey();
+		cv::waitKey(1);
 	}
 
 	void VisgSlamOffline::SaveMapPoints(const std::string &file_name) {

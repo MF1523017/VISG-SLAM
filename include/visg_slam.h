@@ -19,6 +19,7 @@ private:
 class VisgSlamOffline {
 public:
 	VisgSlamOffline();
+	VisgSlamOffline(const std::string &dictionary);
 	void Run(cv::Mat &left, cv::Mat &right);
 	void SaveMapPoints(const std::string &file_name);
 	// for test
