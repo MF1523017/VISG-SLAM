@@ -40,7 +40,7 @@ public:
 		cv::imshow("ar", img);
 	}
 	void Clear() {
-		is_tap = 0;
+		is_tap = false;
 		boxes_.clear();
 	}
 

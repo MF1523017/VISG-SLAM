@@ -6,11 +6,13 @@
 
 // for test
 #include "test.h"
+
+#define LOOP_CLOSING
 extern std::vector<float> errors;
 
 namespace VISG {
 	OrbTracker::OrbTracker() :TrackerInterface(),p_frame_cur_(nullptr), p_frame_last_(nullptr), 
-		p_frame_ref_(nullptr), motion_counter_(0), frame_id_(0){
+		p_frame_ref_(nullptr), loop_closing_(nullptr), motion_counter_(0), frame_id_(0){
 		local_frames_.resize(Common::EveryNFrames,nullptr);
 	}
 
@@ -18,6 +20,7 @@ namespace VISG {
 	OrbTracker::OrbTracker(const std::string & dict) : TrackerInterface(), p_frame_cur_(nullptr), p_frame_last_(nullptr),
 		p_frame_ref_(nullptr), loop_closing_(new Loop), motion_counter_(0), frame_id_(0) {
 		local_frames_.resize(Common::EveryNFrames, nullptr);
+		std::cout << "[OrbTracker::OrbTracker] load dictionary..." << std::endl;
 		loop_closing_->LoadDictionary(dict);
 	}
 
@@ -30,19 +33,23 @@ namespace VISG {
 		{
 		case VISG::TrackerInterface::INIT:
 			if (Init(left, right)) {
+#ifdef LOOP_CLOSING
 				key_frames_.push_back(p_frame_cur_);
 				loop_closing_->AddFeatureToDB(p_frame_cur_->left_descriptors);
+#endif
 				state_ = TRACKING;
 			}
 			break;
 		case VISG::TrackerInterface::TRACKING:
 			if (Track(left, right)&& IsKeyFrame()) {
+#ifdef LOOP_CLOSING
 				auto id = IsLoopClosing();
 				key_frames_.push_back(p_frame_cur_);
 				loop_closing_->AddFeatureToDB(p_frame_cur_->left_descriptors);
 				if (id != -1) {
 					p_frame_cur_ = p_frame_ref_ = key_frames_[id];
 				}
+#endif
 				//cv::waitKey();
 			}
 			break;

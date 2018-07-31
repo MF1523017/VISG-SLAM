@@ -173,6 +173,7 @@ namespace VISG {
 		tracker_->GetPose(R, t);
 #endif
 		positions_slam_.push_back(t);
+		
 		cv::waitKey(1);
 	}
 
