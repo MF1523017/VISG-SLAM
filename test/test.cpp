@@ -84,11 +84,14 @@ void test_offline() {
 
 	// vga mode
 	//const std::string data_dir("H:\\dataset\\20171214_1\\20171214");
+	//const std::string data_dir("H:\\dataset\\20180423_0");
 	//const std::string data_dir("H:\\dataset\\20180423_1");
-	//const std::string data_dir("H:\\dataset\\20180424_0");
-	const std::string data_dir("H:\\dataset\\20180502_0");
+	const std::string data_dir("H:\\dataset\\20180424_0");
+	//const std::string data_dir("H:\\dataset\\20180502_0");
+	
 	//chessboard
 	//const std::string data_dir("H:\\dataset\\20171207_chessboard\\20171207");
+
 #ifdef LOOP_CLOSING
 	//dictionary
 	const std::string dict("H:\\my_only\\code\\slam\\ORB-SLAM2\\ORB_SLAM2\\Vocabulary\\ORBvoc.txt\\ORBvoc.txt");
@@ -121,6 +124,7 @@ void test_offline() {
 	// save rt
 	SaveT(data_dir + "\\position_groundtruth.txt", visg.positions_groundtruth());
 	SaveT(data_dir + "\\position_slam.txt", visg.positions_slam());
+	SaveT(data_dir + "\\position_key_frame.txt", visg.positions_key_frame());
 	 // save errors
 	std::ofstream of(data_dir + "\\errors.txt");
 	for (const auto & e: errors) {
@@ -242,22 +246,27 @@ void test_EuRoCDataset() {
 	Common::DistCoeffs.at<float>(2) = 0.00019359;
 	Common::DistCoeffs.at<float>(3) = 1.76187114e-05;
 
-	VisgSlamOffline visg;
+	const std::string data_dir("H:\\dataset\\MH_01_easy\\mav0");
 	std::vector<std::string> images;
 
-	
-	const std::string data_dir("H:\\dataset\\MH_01_easy\\mav0");
+#ifdef LOOP_CLOSING
+	//dictionary
+	const std::string dict("H:\\my_only\\code\\slam\\ORB-SLAM2\\ORB_SLAM2\\Vocabulary\\ORBvoc.txt\\ORBvoc.txt");
+	VisgSlamOffline visg(dict);
+#else
+	VisgSlamOffline visg;
+#endif
+
 	loadImage(data_dir, images);
 	Timer timer;
 	for (size_t i = 0; i < images.size(); ++i) {
 		timer.Reset();
-		const std::string left_image(data_dir + "\\cam0\\data\\" + images[i]+"g");
-		const std::string right_image(data_dir + "\\cam1\\data\\" + images[i]+"g");
-		std::cout << "[test_EuRoCDataset] left_image: " << left_image << std::endl;
+		const std::string left_image(data_dir + "\\cam0\\data\\" + images[i]);
+		const std::string right_image(data_dir + "\\cam1\\data\\" + images[i]);
 		cv::Mat left = cv::imread(left_image);
 		cv::Mat right = cv::imread(right_image);
 		if (left.empty() || right.empty()) {
-			std::cout << "[test_EuRoCDataset] image empty error" << std::endl;
+			std::cout << "[test_offline] image empty error" << std::endl;
 			return;
 		}
 		visg.Run(left, right);
@@ -266,12 +275,13 @@ void test_EuRoCDataset() {
 		const std::string points_file(data_dir + "\\obj\\" + images[i].substr(0, pos) + ".obj");
 		visg.SaveMapPoints(points_file);
 #endif
-		std::cout << "[test_EuRoCDataset] Time elapsed(ms): " << timer.ElapsedMS() << std::endl;
+		std::cout << "[test_offline] Time elapsed(ms): " << timer.ElapsedMS() << std::endl;
 	}
 
 	// save rt
 	SaveT(data_dir + "\\position_groundtruth.txt", visg.positions_groundtruth());
 	SaveT(data_dir + "\\position_slam.txt", visg.positions_slam());
+	SaveT(data_dir + "\\position_key_frame.txt", visg.positions_key_frame());
 	// save errors
 	std::ofstream of(data_dir + "\\errors.txt");
 	for (const auto & e : errors) {
@@ -279,5 +289,78 @@ void test_EuRoCDataset() {
 	}
 	of.close();
 
+}
+
+
+
+void test_KITTIDataset() {
+	// camera parameters
+	Common::Height = 5.120000e+02;
+	Common::Width = 1.392000e+03;
+	Common::Fx = 9.842439e+02;
+	Common::Fy = 9.808141e+02;
+	Common::Cx = 6.900000e+02;
+	Common::Cy = 2.331966e+02;
+	Common::K = (cv::Mat_<float>(3, 3) << Common::Fx, 0, Common::Cx,
+		0, Common::Fy, Common::Cy,
+		0, 0, 1);
+	Common::ltr.at<float>(0, 0) = 5.370000e-01;
+	Common::FxInv = 1.0 / Common::Fx;
+	Common::FyInv = 1.0 / Common::Fy;
+	std::cout << "[VisgSlamOffline]   K: " << Common::K << " R: "
+		<< Common::lRr << " t: " << Common::ltr << std::endl;
+	Common::BaseLine = 5.370000e-01;
+
+	Common::lRr = (cv::Mat_<float>(3, 3) << 9.993513e-01, 1.860866e-02, -3.083487e-02,
+		-1.887662e-02, 9.997863e-01, -8.421873e-03,
+		3.067156e-02, 8.998467e-03, 9.994890e-01);
+
+	Common::DistCoeffs.at<float>(0) = -0.28340811;
+	Common::DistCoeffs.at<float>(1) = 0.07395907;
+	Common::DistCoeffs.at<float>(2) = 0.00019359;
+	Common::DistCoeffs.at<float>(3) = 1.76187114e-05;
+
+	const std::string data_dir("H:\\my_only\\dataset\\lidar_net_dataset\\2011_09_26_drive_0093_extract\\2011_09_26\\2011_09_26_drive_0093_extract\\");
+	std::vector<std::string> images;
+
+#ifdef LOOP_CLOSING
+	//dictionary
+	const std::string dict("H:\\my_only\\code\\slam\\ORB-SLAM2\\ORB_SLAM2\\Vocabulary\\ORBvoc.txt\\ORBvoc.txt");
+	VisgSlamOffline visg(dict);
+#else
+	VisgSlamOffline visg;
+#endif
+
+	loadImage(data_dir, images);
+	Timer timer;
+	for (size_t i = 0; i < images.size(); ++i) {
+		timer.Reset();
+		const std::string left_image(data_dir + "\\cam0\\data\\" + images[i]);
+		const std::string right_image(data_dir + "\\cam1\\data\\" + images[i]);
+		cv::Mat left = cv::imread(left_image);
+		cv::Mat right = cv::imread(right_image);
+		if (left.empty() || right.empty()) {
+			std::cout << "[test_offline] image empty error" << std::endl;
+			return;
+		}
+		visg.Run(left, right);
+#ifdef SAVE_POINTS
+		const size_t pos = images[i].find('.');
+		const std::string points_file(data_dir + "\\obj\\" + images[i].substr(0, pos) + ".obj");
+		visg.SaveMapPoints(points_file);
+#endif
+		std::cout << "[test_offline] Time elapsed(ms): " << timer.ElapsedMS() << std::endl;
+	}
+
+	// save rt
+	SaveT(data_dir + "\\position_groundtruth.txt", visg.positions_groundtruth());
+	SaveT(data_dir + "\\position_slam.txt", visg.positions_slam());
+	SaveT(data_dir + "\\position_key_frame.txt", visg.positions_key_frame());
+	// save errors
+	std::ofstream of(data_dir + "\\errors.txt");
+	for (const auto & e : errors) {
+		of << e << std::endl;
+	}
+	of.close();
 
 }
