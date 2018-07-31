@@ -54,17 +54,21 @@ def draw():
     
 def DrawProjectError(file_name):
     errors = np.loadtxt(file_name)
-    plt.figure(2)
-    plt.plot(errors)
+    ax = plt.subplot(111)
+    plt.title("projection errors",fontsize=40)
+#    plt.xlabel("frame/s")
+#    plt.ylabel("error/pixel")
+    plt.xticks(fontsize=40)
+    plt.yticks(fontsize=40)
+    ax.set_xlabel(r"frame/s",fontsize=40)
+    ax.set_ylabel(r"error/pixel",fontsize=40)
     plt.axis([0,len(errors),0,5])
-    plt.title("projection errors")
-    plt.xlabel("frame")
-    plt.ylabel("error")
+    ax.plot(errors)
     plt.show()
 
 if __name__ == '__main__':
 #    if(len(sys.argv) == 1):
 #        print("usage:python {} prefix ".format(sys.argv[0]))
 #    draw()
-    file_name = r'H:\dataset\20180424_0\errors.txt'
+    file_name = r'H:\dataset\20180423_1\errors.txt'
     DrawProjectError(file_name)
