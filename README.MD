@@ -1,4 +1,4 @@
-#VISG-SLAM
+# VISG-SLAM
 ## a simple system of the stereo vision slam
 ## camera
  * [zed stereo camera](https://www.stereolabs.com/)
