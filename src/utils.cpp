@@ -101,13 +101,11 @@ namespace VISG {
 
 		return ypr / M_PI * 180.0;
 	}
-	Eigen::Matrix4f HPose(const Eigen::Matrix3f &R, const Eigen::Vector3f &t) {
-		Eigen::Matrix4f T;
+	void HPose(const Eigen::Matrix3f &R, const Eigen::Vector3f &t, Eigen::Matrix4f &T) {
 		T << R(0, 0), R(0, 1), R(0, 2), t.x(),
 			R(1, 0), R(1, 1), R(1, 2), t.y(),
 			R(2, 0), R(2, 1), R(2, 2), t.z(),
 			0, 0, 0, 1;
-		return T;
 	}
 
 	void HPose2Rt(const Eigen::Matrix4f &T, Eigen::Matrix3f &R, Eigen::Vector3f &t) {

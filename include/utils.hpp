@@ -27,7 +27,7 @@ namespace VISG {
 	cv::Point3f PEigen2cv(const Eigen::Vector3f &p);
 	cv::Point3f Pdouble2cv(const double *p);
 	Eigen::Vector3f R2ypr(const Eigen::Matrix3f &R);
-	Eigen::Matrix4f HPose(const Eigen::Matrix3f &R, const Eigen::Vector3f &t);
+	void HPose(const Eigen::Matrix3f &R, const Eigen::Vector3f &t, Eigen::Matrix4f &T);
 	void HPose2Rt(const Eigen::Matrix4f &T, Eigen::Matrix3f &R, Eigen::Vector3f &t);
 	
 	void loadImage(const std::string & file_dir, std::vector<std::string> &images);
